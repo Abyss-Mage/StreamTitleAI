@@ -10,6 +10,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 package-lock.json
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
 logs/
@@ -79,6 +84,7 @@ functions/node_modules/
 # --- Local Configurations ---
 # (Ignore any personal config files or API keys)
 config/*.local.json
+.env.*
 .envrc
 
 # --- Misc ---
