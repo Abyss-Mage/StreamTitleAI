@@ -1,36 +1,105 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ============================================================
+# 🌐 StreamTitle.AI Git Ignore
+# React (Vite) Frontend + Node.js / Express Backend
+# ============================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# --- Node.js / Express ---
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+package-lock.json
 
-# local env files
-.env*.local
-.env
+# Logs
+logs/
+*.log
+*.out
+*.pid
+*.seed
+*.pid.lock
 
-# vercel
-.vercel
+# Runtime data
+pids/
+lib-cov/
+coverage/
+.cache/
+dist/
+build/
+tmp/
+temp/
+.DS_Store
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# --- Vite / React Frontend ---
+# Build output
+frontend/dist/
+frontend/node_modules/
+.vite/
+vite.config.ts.timestamp*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS / System ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Optional: Testing / Coverage ---
+coverage/
+nyc_output/
+*.lcov
+
+# --- Firebase / Deployment ---
+.firebase/
+.firebaserc
+*.deploycache
+*.firebase-debug.log
+functions/node_modules/
+
+# --- Logs / Temp ---
+*.tgz
+*.tar.gz
+*.zip
+*.tmp
+*.bak
+
+# --- Local Configurations ---
+# (Ignore any personal config files or API keys)
+config/*.local.json
+.envrc
+
+# --- Misc ---
+*.pem
+*.key
+*.crt
+*.pfx
+*.old
+*.backup
+*.bak
+
+# --- System Specific ---
+# JetBrains
+*.iml
+.idea/
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# --- OS Cache ---
+*.pyc
+__pycache__/
+Thumbs.db
