@@ -1,68 +1,122 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* frontend/src/index.css */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* --- DEFAULT (LIGHT) THEME --- */
+body[data-theme="light"] {
+  /* Color Palette */
+  --primary-hue: 250; /* Violet */
+  --primary-color: hsl(var(--primary-hue), 90%, 60%);
+  --primary-glow: hsl(var(--primary-hue), 90%, 60%, 0.4);
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary-hue), 90%, 60%), hsl(280, 90%, 60%));
+  
+  --text-primary: #111827; /* Dark gray */
+  --text-secondary: #4B5563; /* Medium gray */
+  --text-on-primary: #ffffff; /* White text on buttons */
+  --text-placeholder: #6B7280;
+
+  /* Surfaces (for Glassmorphism) */
+  --surface-color: rgba(255, 255, 255, 0.4); /* Lighter surface */
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-blur: 10px;
+  
+  /* Background */
+  --bg-color-1: #F3F4F6; /* Light gray */
+  --bg-color-2: #E5E7EB; /* Darker light gray */
+  --bg-input: rgba(255, 255, 255, 0.7);
+  --bg-tag: rgba(0, 0, 0, 0.05);
+}
+
+/* --- DARK THEME --- */
+body[data-theme="dark"] {
+  --primary-hue: 250;
+  --primary-color: hsl(var(--primary-hue), 100%, 70%);
+  --primary-glow: hsl(var(--primary-hue), 100%, 70%, 0.3);
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary-hue), 100%, 70%), hsl(280, 100%, 70%));
+  
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0b0;
+  --text-on-primary: #ffffff;
+  --text-placeholder: #888;
+
+  --surface-color: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(255, 255, 255, 0.1);
+  --surface-blur: 12px;
+  
+  --bg-color-1: #0b021a;
+  --bg-color-2: #1a042e;
+  --bg-input: rgba(0,0,0,0.2);
+  --bg-tag: var(--surface-color);
+}
+
+
+/* --- Global Styles --- */
+
+body {
+  margin: 0;
+  padding: 40px 20px;
+  min-height: 100vh;
+  color: var(--text-primary);
+  
+  background-color: var(--bg-color-1);
+  background-image: 
+    radial-gradient(at 20% 20%, hsla(var(--primary-hue), 100%, 70%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, hsla(280, 100%, 70%, 0.15) 0px, transparent 50%);
+  
+  display: flex;
+  justify-content: center;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
 }
-a:hover {
-  color: #535bf2;
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
 }
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
+::-webkit-scrollbar-thumb {
+  background: var(--surface-border);
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* --- FIX for Form Elements --- */
+/* This resets the browser's default styles, which was a major problem */
+input,
+select,
+button,
+textarea {
+  font-family: 'Inter', sans-serif;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* Set placeholder color */
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: var(--text-placeholder);
+  opacity: 1; /* Firefox */
+}
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  color: var(--text-placeholder);
+}
+::-ms-input-placeholder { /* Microsoft Edge */
+  color: var(--text-placeholder);
 }

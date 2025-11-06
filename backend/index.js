@@ -13,81 +13,86 @@ app.use(cors());
 
 // --- AI & API Clients ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-// --- UPDATED ---
-const steamApiKey = process.env.STEAM_API_KEY; // Using Steam key
+const mainModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Model for creative generation
+const steamApiKey = process.env.STEAM_API_KEY; 
 const curseforgeApiKey = process.env.CURSEFORGE_API_KEY;
-const MINECRAFT_GAME_ID = 432; // Static ID for Minecraft on CurseForge
+const MINECRAFT_GAME_ID = 432; 
+
+// --- NEW: AI "Expander" Prompt (Step 1) ---
+// This prompt will expand abbreviations like "bg3" to "Baldur's Gate 3"
+const expanderSystemPrompt = `You are a helpful gaming encyclopedia. The user will provide a game name, nickname, or abbreviation. 
+Respond with ONLY the full, official, searchable title of the game.
+
+Examples:
+User: "bg3"
+Assistant: "Baldur's Gate 3"
+User: "cod mw3"
+Assistant: "Call of Duty: Modern Warfare III"
+User: "Elden Ring"
+Assistant: "Elden Ring"
+User: "stardew"
+Assistant: "Stardew Valley"
+User: "ftb"
+Assistant: "Feed The Beast"
+
+If it's ambiguous or not a game, just return the original text.
+Do not add any other text, just the name.`;
 
 // --- Core Generation Prompt (The "Brain") ---
-// --- UPDATED ---
-// THIS PROMPT IS NEW. It can now handle FOUR different types of input data.
+// (This prompt remains unchanged from the previous step)
 const systemPrompt = `
 You are StreamTitle.AI, a world-class creative writer for gaming content creators.
 Your sole purpose is to generate highly detailed, SEO-optimized, and community-aware content packages.
 
-You will be given a JSON object containing **verified data**. This data will be in one of four formats: "GameData" (from Steam), "GameData" (from RAWG.io), "ModpackData" (from Modrinth), or "ModpackData" (from CurseForge).
+You will be given a JSON object containing two keys: "facts" and "preferences".
+"facts" contains verified data in one of four formats (Steam, RAWG, Modrinth, CurseForge).
+"preferences" contains user requests for "language" and "descriptionLength".
 
-You MUST intelligently detect the format and generate a creative package.
+You MUST adhere to these preferences.
+You MUST generate a creative package.
 You MUST follow the "Success JSON Structure" below.
 You MUST return ONLY a valid, minified JSON object (no other text, no markdown, no "here you go").
 
 ---
-**Format 1: GameData (from Steam)**
+**Input Data Structure (Example)**
 {
-  "source": "Steam",
-  "name": "Game Title",
-  "description": "A short summary of the game...",
-  "genres": ["Genre1", "Genre2"],
-  "developers": ["Dev1", "Dev2"]
-}
-
-**Format 2: GameData (from RAWG)**
-{
-  "source": "RAWG",
-  "name": "Game Title",
-  "description_raw": "A long text description of the game...",
-  "genres": [{ "name": "Genre1" }, { "name": "Genre2" }],
-  "tags": [{ "name": "Tag1" }, { "name": "Tag2" }],
-  "developers": [{ "name": "Dev1" }]
-}
-
-**Format 3: ModpackData (from Modrinth)**
-{
-  "source": "Modrinth",
-  "title": "Modpack Title",
-  "description": "A short summary of the modpack...",
-  "categories": ["adventure", "tech", "magic"],
-  "versions": ["1.19.2", "1.20.1"],
-  "downloads": 123456
-}
-
-**Format 4: ModpackData (from CurseForge)**
-{
-  "source": "CurseForge",
-  "title": "Modpack Title",
-  "description": "A short summary of the modpack...",
-  "categories": ["Adventure", "Tech", "Magic"],
-  "versions": ["1.19.2", "1.20.1"],
-  "downloads": 987654
+  "facts": {
+    "source": "Steam",
+    "name": "Elden Ring",
+    "description": "...",
+    "genres": ["RPG"],
+    "developers": ["FromSoftware"]
+  },
+  "preferences": {
+    "language": "English",
+    "descriptionLength": "Medium" 
+  }
 }
 ---
 
+**User Preferences Guide:**
+1.  **language**: You MUST generate all text (titles, descriptions, tags, etc.) in this language. (e.g., "Spanish", "Japanese", "English").
+2.  **descriptionLength**: You MUST adjust the length of the "youtube.description" text.
+    * "Short": 1-2 paragraphs.
+    * "Medium": 3-4 paragraphs with markdown.
+    * "Long": 5+ paragraphs, very detailed, with markdown and emojis.
+
+---
+
 **Success JSON Structure (Your Output)**
-(Your task is to creatively fill this out using the data above)
+(Your task is to creatively fill this out in the requested language)
 {
   "game": "The Game/Modpack Name You Were Given",
   "youtube": {
-    "title": "🎮 [A catchy, SEO-friendly YouTube Title based on the data]",
-    "description": "[A complete, multi-part, SEO-optimized YouTube description. USE EMOJIS AND MARKDOWN (\\n for newlines). 
+    "title": "🎮 [A catchy, SEO-friendly YouTube Title in the target language]",
+    "description": "[A complete, multi-part, SEO-optimized YouTube description in the target language, matching the requested descriptionLength. USE EMOJIS AND MARKDOWN (\\n for newlines). 
    
     **If GameData:** Mention the genres, developer, and key features.
-    **If ModpackData:** Mention the core theme (e.g., 'tech', 'magic'), the Minecraft version, and list some popular mods associated with it (you should know popular mods for categories like 'tech' or 'magic').
+    **If ModpackData:** Mention the core theme (e.g., 'tech', 'magic'), the Minecraft version.
    
-    Include sections for: 
-    📝 Stream Description (SEO Optimized)
+    Include sections appropriate for the length, such as: 
+    📝 Stream Description
     ⚙️ [Catchy Intro Hook]...
-    🧱 Featuring Key Mechanics/Mods:
     🔥 What’s Happening in this Stream:
     🎮 Game/Modpack: [Name]
    
@@ -95,72 +100,115 @@ You MUST return ONLY a valid, minified JSON object (no other text, no markdown, 
     🔗 Discord: [Your Server Invite Here]
     📺 Don’t forget to Like 👍, Subscribe 🔔, and Comment!]",
     "tags": [
-      "game/modpack name", "developer/author", "genre/category1", "genre/category2",
-      "Gaming", "Live Stream", "2025", "gameplay", "let's play",
+      "game/modpack name", "developer/author", "genre/category1",
+      "Gaming", "Live Stream", "gameplay", "let's play",
       // If ModpackData, add:
-      "Minecraft", "Modded Minecraft", "Modpack", "[minecraft_version]"
+      "Minecraft", "Modded Minecraft", "Modpack",
+      // All tags must be in the target language or be universal names.
     ]
   },
   "discord": {
-    "announcement": "🚀 [Stream Title] is LIVE! ⚙️\n\nHey @everyone! We’re jumping into [Game/Modpack Name] — [a [Genre] game OR a [Theme] modpack] packed with [Key Feature 1] and [Key Feature 2]!\n\nJoin us as we [Main Goal of Stream]!\n\n🕹️ Watch Live: [Your YouTube Link]\n\n💬 Join the Chat: Talk, share ideas, or hop into VC while we play!"
+    "announcement": "🚀 [Stream Title] is LIVE! ⚙️\n\nHey @everyone! We’re jumping into [Game/Modpack Name]! ... [Generate a concise, exciting announcement in the target language]"
+  },
+  "thumbnail": {
+    "idea_1": "[A creative, simple idea for a YouTube thumbnail. e.g., 'Close up on player character's face, with the game's logo in the corner.']",
+    "idea_2": "[A second, more dynamic thumbnail idea. e.g., 'A split screen: left side shows a cool boss, right side shows your shocked face.']",
+    "text_overlay": "[Suggested text to put on the thumbnail, e.g., 'THE IMPOSSIBLE BOSS?' or 'MY NEW FACTORY!']"
   }
 }
 ---
 `;
 
 // --- Error Function (Helper) ---
-// This standardizes our error response to the frontend
-function createErrorResponse(inputName, message) {
+// --- UPDATED: To accept originalQuery and prefs ---
+function createErrorResponse(inputName, message, originalQuery, prefs) {
     return {
         game: "Invalid Input",
         youtube: {
             title: "🎮 Error: Content Not Found",
-            description: `The input '${inputName}' could not be found as a game or modpack.\n\nDetails: ${message}\n\nPlease check the spelling or try a different name.`,
+            description: `The input '${originalQuery}' could not be found as a game or modpack.\n\nDetails: ${message}\n\nPlease check the spelling or try a different name.`,
             tags: ["error", "invalid input", "not found"]
         },
         discord: {
-            announcement: `❌ **Error:** The game or modpack '${inputName}' was not found.`
+            announcement: `❌ **Error:** The game or modpack '${originalQuery}' was not found.`
+        },
+        thumbnail: {
+            idea_1: "No thumbnail generated due to error.",
+            idea_2: "Please check your input.",
+            text_overlay: "ERROR"
+        },
+        // --- NEW: Add preferences to error object for history ---
+        preferences: {
+            ...prefs,
+            originalQuery: originalQuery
         }
     };
 }
 
 
 // --- API Endpoint (Section 7 from TSD) ---
-// This function now contains the full "waterfall" logic.
 app.post('/api/generate', async (req, res) => {
     try {
-        const { gameName } = req.body;
+        const { gameName, language = 'English', descriptionLength = 'Medium' } = req.body;
+        const userPreferences = { language, descriptionLength };
+        
         if (!gameName) {
             return res.status(400).json({ error: 'Game name is required' });
         }
         console.log(`[StreamTitle.AI] Received request for: ${gameName}`);
+
+        // --- NEW FEATURE: SHORT-FORM EXPANSION ---
+        let officialGameName = gameName; // Default to original name
+        try {
+            console.log(`[StreamTitle.AI] Expanding short form: "${gameName}"`);
+            const expanderModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Use a fast model
+            const chat = expanderModel.startChat({
+                history: [{ role: "user", parts: [{ text: expanderSystemPrompt }] }],
+                generationConfig: { maxOutputTokens: 100 }
+            });
+            const result = await chat.sendMessage(gameName);
+            const response = await result.response;
+            const expandedName = response.text().trim();
+
+            if (expandedName.toLowerCase() !== gameName.toLowerCase() && expandedName.length > 0) {
+                console.log(`[StreamTitle.AI] Expanded "${gameName}" to "${expandedName}"`);
+                officialGameName = expandedName; // Use the new, full name
+            } else {
+                console.log(`[StreamTitle.AI] No expansion needed.`);
+            }
+        } catch (expandError) {
+            console.error('[StreamTitle.AI] Error during name expansion, proceeding with original name:', expandError.message);
+            officialGameName = gameName; // Failsafe: use the original name
+        }
+        // --- END OF NEW FEATURE ---
+
+        console.log(`[StreamTitle.AI] Preferences: Lang=${language}, Length=${descriptionLength}`);
+        console.log(`[StreamTitle.AI] Searching APIs with name: "${officialGameName}"`);
+
 
         let factsForAI = null;
         let found = false;
 
         // -----------------------------------------------------------------
         // --- STEP 1: Try to find as a GAME (Steam API) ---
-        // --- THIS ENTIRE BLOCK IS NEW / REPLACED ---
+        // --- UPDATED: Use 'officialGameName' ---
         // -----------------------------------------------------------------
         try {
-            console.log(`[StreamTitle.AI] Checking Steam Store API for "${gameName}"...`);
-            // We use the Steam Store Search API (unofficial but effective)
+            console.log(`[StreamTitle.AI] Checking Steam Store API for "${officialGameName}"...`);
             const searchResponse = await axios.get(`https://store.steampowered.com/api/storesearch/`, {
-                params: {
-                    term: gameName,
-                    l: 'en', // Language
-                    cc: 'us'  // Country code
+                params: { 
+                    term: officialGameName, // Use expanded name
+                    l: 'en', 
+                    cc: 'us' 
                 }
             });
 
             if (searchResponse.data.items && searchResponse.data.items.length > 0) {
-                const game = searchResponse.data.items[0]; // Get the top result
+                const game = searchResponse.data.items[0]; 
                 const gameAppId = game.id;
                 console.log(`[StreamTitle.AI] Found Steam AppID: ${gameAppId}`);
 
-                // Now get details using the AppID
                 const detailsResponse = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${gameAppId}`);
-                
                 const gameData = detailsResponse.data[gameAppId].data;
 
                 if (gameData) {
@@ -176,23 +224,22 @@ app.post('/api/generate', async (req, res) => {
                      console.log(`[StreamTitle.AI] Failed to get app details for AppID ${gameAppId}.`);
                 }
             } else {
-                console.log(`[StreamTitle.AI] No results on Steam Store for "${gameName}".`);
+                console.log(`[StreamTitle.AI] No results on Steam Store for "${officialGameName}".`);
             }
         } catch (apiError) {
             console.error('[StreamTitle.AI] Error calling Steam API:', apiError.message);
         }
 
-
         // -----------------------------------------------------------------
         // STEP 2: If not found, try as a MODPACK (Modrinth API)
+        // --- UPDATED: Use 'officialGameName' ---
         // -----------------------------------------------------------------
         if (!found) {
             try {
-                console.log(`[StreamTitle.AI] Checking Modrinth API for "${gameName}"...`);
-                // facets=[["project_type:modpack"]] ensures we only get modpacks
+                console.log(`[StreamTitle.AI] Checking Modrinth API for "${officialGameName}"...`);
                 const modrinthSearch = await axios.get(`https://api.modrinth.com/v2/search`, {
                     params: {
-                        query: gameName,
+                        query: officialGameName, // Use expanded name
                         limit: 1,
                         facets: '[["project_type:modpack"]]'
                     }
@@ -212,7 +259,7 @@ app.post('/api/generate', async (req, res) => {
                     };
                     found = true;
                 } else {
-                    console.log(`[StreamTitle.AI] No modpack results on Modrinth for "${gameName}".`);
+                    console.log(`[StreamTitle.AI] No modpack results on Modrinth for "${officialGameName}".`);
                 }
             } catch (apiError) {
                 console.error('[StreamTitle.AI] Error calling Modrinth API:', apiError.message);
@@ -221,19 +268,19 @@ app.post('/api/generate', async (req, res) => {
 
         // -----------------------------------------------------------------
         // STEP 3: If not found, try CurseForge API
+        // --- UPDATED: Use 'officialGameName' ---
         // -----------------------------------------------------------------
         if (!found) {
             if (!curseforgeApiKey) {
                 console.log(`[StreamTitle.AI] CurseForge API key not found, skipping step 3.`);
             } else {
                 try {
-                    console.log(`[StreamTitle.AI] Checking CurseForge API for "${gameName}"...`);
-                    // 4471 is the ClassID for Modpacks
+                    console.log(`[StreamTitle.AI] Checking CurseForge API for "${officialGameName}"...`);
                     const curseForgeSearch = await axios.get(`https://api.curseforge.com/v1/mods/search`, {
                         params: {
                             gameId: MINECRAFT_GAME_ID,
-                            searchFilter: gameName,
-                            classId: 4471, // 4471 = Modpacks
+                            searchFilter: officialGameName, // Use expanded name
+                            classId: 4471, 
                             pageSize: 1
                         },
                         headers: {
@@ -251,14 +298,13 @@ app.post('/api/generate', async (req, res) => {
                             source: "CurseForge",
                             title: mod.name,
                             description: mod.summary,
-                            // Map category names and latest file versions
                             categories: mod.categories.map(c => c.name),
-                            versions: mod.latestFiles.map(f => f.gameVersion).filter((v, i, a) => a.indexOf(v) === i), // Unique versions
+                            versions: mod.latestFiles.map(f => f.gameVersion).filter((v, i, a) => a.indexOf(v) === i), 
                             downloads: mod.downloadCount
                         };
                         found = true;
                     } else {
-                        console.log(`[StreamTitle.AI] No modpack results on CurseForge for "${gameName}".`);
+                        console.log(`[StreamTitle.AI] No modpack results on CurseForge for "${officialGameName}".`);
                     }
                 } catch (apiError) {
                     console.error('[StreamTitle.AI] Error calling CurseForge API:', apiError.message);
@@ -269,11 +315,16 @@ app.post('/api/generate', async (req, res) => {
 
         // -----------------------------------------------------------------
         // STEP 4: If still not found, return an error
+        // --- UPDATED: Use new error function ---
         // -----------------------------------------------------------------
         if (!found) {
             console.log(`[StreamTitle.AI] Content not found in any database.`);
-            // --- UPDATED ---
-            return res.status(404).json(createErrorResponse(gameName, "Not found in Steam, Modrinth, or CurseForge."));
+            return res.status(404).json(createErrorResponse(
+                officialGameName, 
+                `Not found in Steam, Modrinth, or CurseForge. (Searched for: "${officialGameName}")`,
+                gameName, // The user's original query
+                userPreferences
+            ));
         }
 
         // -----------------------------------------------------------------
@@ -281,7 +332,7 @@ app.post('/api/generate', async (req, res) => {
         // -----------------------------------------------------------------
         console.log(`[StreamTitle.AI] Sending verified ${factsForAI.source} data to Gemini for creative writing...`);
 
-        const chat = model.startChat({
+        const chat = mainModel.startChat({
             history: [{ role: "user", parts: [{ text: systemPrompt }] }],
             generationConfig: {
                 maxOutputTokens: 8192,
@@ -289,14 +340,17 @@ app.post('/api/generate', async (req, res) => {
             },
         });
 
-        // Send the JSON *data* (the "facts") as the message
-        const result = await chat.sendMessage(JSON.stringify(factsForAI));
+        const aiRequestPayload = {
+            facts: factsForAI,
+            preferences: userPreferences
+        };
+
+        const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
         const response = await result.response;
         const rawText = response.text();
 
         console.log(`[StreamTitle.AI] Gemini Raw Output:\n${rawText}`);
         
-        // Clean and parse the response
         const match = rawText.match(/\{[\s\S]*\}/);
         if (!match) {
             console.error("[StreamTitle.AI] Error: No valid JSON object found in Gemini response.");
@@ -306,12 +360,17 @@ app.post('/api/generate', async (req, res) => {
         const cleanText = match[0];
         const jsonResponse = JSON.parse(cleanText);
 
+        // --- NEW: Re-attach preferences and original query for history ---
+        jsonResponse.preferences = {
+            ...userPreferences,
+            originalQuery: gameName 
+        };
+
         // Send the final, beautiful JSON back to the frontend
         res.json(jsonResponse);
 
     } catch (error) {
         console.error('[StreamTitle.AI] Root Error:', error);
-        // This was the 5T00 error
         res.status(500).json({ error: 'Failed to generate content. Please check the server logs.' });
     }
 });
