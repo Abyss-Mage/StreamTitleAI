@@ -2,25 +2,28 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css'; // We still use the main styles
+import './App.css';
 import { 
   Search, Copy, Youtube, MessageSquare, Hash, ThumbsUp, 
-  Globe, AlignLeft, X, Loader
+  Globe, AlignLeft, X, Loader, Monitor // Added Monitor
 } from 'react-feather';
 
-// This is the main generator page
+// Firebase Imports
+import { auth, db } from './firebase';
+import { addDoc, collection, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+
 function GeneratorPage() {
   const [gameName, setGameName] = useState('');
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // --- NEW: Add Platform State ---
+  const [platform, setPlatform] = useState('YouTube');
   const [descriptionLength, setDescriptionLength] = useState('Medium');
   const [language, setLanguage] = useState('English');
   
-  // --- NEW: Load from History (via sessionStorage) ---
-  // This effect runs once on mount to check if we navigated
-  // from the history page.
+  // Load from History (via sessionStorage)
   useEffect(() => {
     const itemToLoad = sessionStorage.getItem('loadItem');
     if (itemToLoad) {
@@ -28,20 +31,20 @@ function GeneratorPage() {
         const item = JSON.parse(itemToLoad);
         setResult(item);
         
-        // Load preferences from the item
         const prefs = item.preferences || {};
         setGameName(prefs.originalQuery || item.game);
+        // --- UPDATE: Load new preferences ---
+        setPlatform(prefs.platform || 'YouTube');
         setDescriptionLength(prefs.descriptionLength || 'Medium');
         setLanguage(prefs.language || 'English');
 
       } catch (e) {
         console.error("Failed to parse item from sessionStorage", e);
       } finally {
-        // Clear the item so it doesn't load again on refresh
         sessionStorage.removeItem('loadItem');
       }
     }
-  }, []); // Empty array ensures this runs only once on mount
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -49,42 +52,69 @@ function GeneratorPage() {
     setError(null);
     setResult(null);
 
+    // --- UPDATE: Add platform to preferences ---
     const userPreferences = {
+      platform: platform,
       language: language,
       descriptionLength: descriptionLength,
     };
 
     try {
-      const response = await axios.post('https://a12911800d90.ngrok-free.app/api/generate', {
-        gameName: gameName,
-        ...userPreferences,
-      });
+      // --- Get Firebase Auth Token ---
+      if (!auth.currentUser) {
+        throw new Error("You must be logged in to generate content.");
+      }
+      const token = await auth.currentUser.getIdToken();
+
+      // --- TASK 1 FIX: Use relative API path ---
+      const response = await axios.post('/api/generate', 
+        { // Payload
+          gameName: gameName,
+          ...userPreferences,
+        },
+        { // Config with Auth Header
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
       
       const newResult = { ...response.data };
       setResult(newResult);
       
-      // --- SAVE TO HISTORY (localStorage) ---
-      // We don't manage history state here, just save it
-      const storedHistory = localStorage.getItem('streamTitleHistory');
-      const history = storedHistory ? JSON.parse(storedHistory) : [];
+      // --- TASK 2: SAVE TO FIRESTORE HISTORY ---
+      // Check if this exact game was already saved
+      const historyCollection = collection(db, 'history');
+      const q = query(
+        historyCollection,
+        where("uid", "==", auth.currentUser.uid),
+        where("game", "==", newResult.game),
+        limit(1)
+      );
       
-      // Add a unique ID and the full result
-      const newHistoryItem = { 
-        ...newResult, 
-        id: new Date().toISOString() 
-      };
+      const existing = await getDocs(q);
       
-      // Add new item to the front, preventing duplicates of the same game
-      const updatedHistory = [newHistoryItem, ...history.filter(item => item.game !== newResult.game)];
-      localStorage.setItem('streamTitleHistory', JSON.stringify(updatedHistory));
+      if (existing.empty) {
+        // Add new item to firestore
+        await addDoc(historyCollection, {
+          ...newResult, 
+          uid: auth.currentUser.uid, // Tag with user ID
+          createdAt: serverTimestamp() // Add timestamp
+        });
+      } else {
+        // We could update the existing one, but for now we'll just skip
+        console.log("History item for this game already exists.");
+      }
 
     } catch (err) {
       console.error('Error fetching data:', err);
       if (err.response && err.response.status === 404) {
         setError(`'${gameName}' was not found. Please check the spelling.`);
         setResult(err.response.data); 
+      } else if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        setError('Authentication error. Please log out and log back in.');
       } else {
-        setError('Failed to generate content. Is the backend server running?');
+        setError(err.message || 'Failed to generate content. Is the backend server running?');
       }
     } finally {
       setIsLoading(false);
@@ -102,9 +132,7 @@ function GeneratorPage() {
   };
 
   return (
-    // We remove the outer <div className="container">, as App.jsx will provide it
     <> 
-      {/* --- Input Form --- */}
       <form onSubmit={handleSubmit} className="input-form">
         <div className="input-wrapper">
           <Search size={20} className="input-icon" />
@@ -117,7 +145,21 @@ function GeneratorPage() {
           />
         </div>
         
-        <div className="settings-row">
+        {/* --- UPDATE: 3-column settings row --- */}
+        <div className="settings-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+          <div className="select-wrapper">
+            <Monitor size={16} className="select-icon" />
+            <select 
+              className="settings-select"
+              value={platform} 
+              onChange={(e) => setPlatform(e.target.value)}
+            >
+              <option value="YouTube">YouTube</option>
+              <option value="Twitch">Twitch</option>
+              <option value="Kick">Kick</option>
+            </select>
+          </div>
+
           <div className="select-wrapper">
             <Globe size={16} className="select-icon" />
             <select 
@@ -141,9 +183,9 @@ function GeneratorPage() {
               value={descriptionLength}
               onChange={(e) => setDescriptionLength(e.target.value)}
             >
-              <option value="Short">Short Desc.</option>
-              <option value="Medium">Medium Desc.</option>
-              <option value="Long">Long Desc.</option>
+              <option value="Short">Short</option>
+              <option value="Medium">Medium</option>
+              <option value="Long">Long</option>
             </select>
           </div>
         </div>
@@ -160,7 +202,6 @@ function GeneratorPage() {
         </button>
       </form>
 
-      {/* --- Results Section --- */}
       {error && (
         <div className="error-message">
           <X size={20} /> {error}
@@ -169,56 +210,57 @@ function GeneratorPage() {
 
       {isLoading && !result && <div className="loading-spinner"></div>}
 
+      {/* --- UPDATE: Use new generic result keys --- */}
       {result && (
         <div className="results-card">
           <h2>Results for: {result.game}</h2>
 
-          {/* YouTube Title */}
+          {/* Platform Title */}
           <div className="result-item">
-            <label><Youtube size={16} /> Generated YouTube Title</label>
+            <label><Monitor size={16} /> Generated {platform} Title</label>
             <textarea
               readOnly
               rows={2}
-              value={result.youtube.title}
-              onClick={() => copyToClipboard(result.youtube.title)}
+              value={result.platformTitle}
+              onClick={() => copyToClipboard(result.platformTitle)}
             ></textarea>
             <button
               className="copy-btn"
               title="Copy to clipboard"
-              onClick={() => copyToClipboard(result.youtube.title)}
+              onClick={() => copyToClipboard(result.platformTitle)}
             >
               <Copy size={16} />
             </button>
           </div>
 
           {/* Thumbnail Ideas */}
-          {result.thumbnail && (
+          {result.thumbnailIdeas && (
             <div className="result-item">
               <label><ThumbsUp size={16} /> Generated Thumbnail Ideas</label>
               <div className="thumbnail-ideas-container">
-                <p><strong>Idea 1:</strong> {result.thumbnail.idea_1}</p>
-                <p><strong>Idea 2:</strong> {result.thumbnail.idea_2}</p>
+                <p><strong>Idea 1:</strong> {result.thumbnailIdeas.idea_1}</p>
+                <p><strong>Idea 2:</strong> {result.thumbnailIdeas.idea_2}</p>
                 <p>
                   <strong>Text Overlay:</strong> 
-                  <span className="thumbnail-text-tag">{result.thumbnail.text_overlay}</span>
+                  <span className="thumbnail-text-tag">{result.thumbnailIdeas.text_overlay}</span>
                 </p>
               </div>
             </div>
           )}
 
-          {/* YouTube Description */}
+          {/* Platform Description */}
           <div className="result-item">
-            <label><AlignLeft size={16} /> Generated YouTube Description</label>
+            <label><AlignLeft size={16} /> Generated {platform} Description</label>
             <textarea
               readOnly
-              value={formatForDisplay(result.youtube.description)}
+              value={formatForDisplay(result.platformDescription)}
               rows={12} 
-              onClick={() => copyToClipboard(formatForDisplay(result.youtube.description))}
+              onClick={() => copyToClipboard(formatForDisplay(result.platformDescription))}
             ></textarea>
             <button
               className="copy-btn"
               title="Copy to clipboard"
-              onClick={() => copyToClipboard(formatForDisplay(result.youtube.description))}
+              onClick={() => copyToClipboard(formatForDisplay(result.platformDescription))}
             >
               <Copy size={16} />
             </button>
@@ -229,24 +271,24 @@ function GeneratorPage() {
             <label><MessageSquare size={16} /> Generated Discord Announcement</label>
             <textarea
               readOnly
-              value={formatForDisplay(result.discord.announcement)}
+              value={formatForDisplay(result.discordAnnouncement)}
               rows={8} 
-              onClick={() => copyToClipboard(formatForDisplay(result.discord.announcement))}
+              onClick={() => copyToClipboard(formatForDisplay(result.discordAnnouncement))}
             ></textarea>  
             <button
               className="copy-btn"
               title="Copy to clipboard"
-              onClick={() => copyToClipboard(formatForDisplay(result.discord.announcement))}
+              onClick={() => copyToClipboard(formatForDisplay(result.discordAnnouncement))}
             >
               <Copy size={16} />
             </button>
           </div>
 
-          {/* YouTube Tags */}
+          {/* Platform Tags */}
           <div className="result-item">
-            <label><Hash size={16} /> Generated YouTube Tags</label>
+            <label><Hash size={16} /> Generated {platform} Tags</label>
             <div className="tags-container">
-              {result.youtube.tags.map((tag, index) => (
+              {result.platformTags.map((tag, index) => (
                 <span key={index} className="tag">
                   {tag}
                 </span>
@@ -255,7 +297,7 @@ function GeneratorPage() {
             <button
               className="copy-btn"
               title="Copy all tags"
-              onClick={() => copyToClipboard(result.youtube.tags.join(', '))}
+              onClick={() => copyToClipboard(result.platformTags.join(', '))}
             >
               <Copy size={16} />
             </button>
