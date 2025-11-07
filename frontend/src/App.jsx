@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import './App.css'; 
-import { Sun, Moon, Clock, Home, LogIn, LogOut } from 'react-feather';
+import { Sun, Moon, Clock, Home, LogIn, LogOut, Settings } from 'react-feather';
 
 // Firebase Imports
 import { auth } from './firebase';
@@ -12,6 +12,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import GeneratorPage from './GeneratorPage';
 import HistoryPage from './HistoryPage';
 import LoginPage from './LoginPage';
+import SettingsPage from './SettingsPage';
 
 // A simple component to protect routes
 function ProtectedRoute({ children }) {
@@ -83,6 +84,14 @@ function App() {
               <Clock size={18} />
               <span>History</span>
             </NavLink>
+
+            <NavLink 
+              to="/settings" 
+              className={({ isActive }) => "nav-link" + (isActive ? " nav-link-active" : "")}
+            >
+              <Settings size={18} />
+              <span>Settings</span>
+            </NavLink>
           </nav>
         )}
 
@@ -106,7 +115,7 @@ function App() {
         </button>
       </header>
       
-<main>
+      <main>
         <Routes>
           <Route 
             path="/" 
@@ -124,8 +133,14 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          
-          {/* --- THIS IS THE MODIFIED ROUTE --- */}
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/login" 
             element={
@@ -138,8 +153,6 @@ function App() {
               )
             } 
           />
-          {/* --- END OF MODIFICATION --- */}
-          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

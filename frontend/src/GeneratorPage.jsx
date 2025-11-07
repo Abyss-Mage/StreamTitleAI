@@ -5,7 +5,7 @@ import axios from 'axios';
 import './App.css';
 import { 
   Search, Copy, Youtube, MessageSquare, Hash, ThumbsUp, 
-  Globe, AlignLeft, X, Loader, Monitor // Added Monitor
+  Globe, AlignLeft, X, Loader, Monitor, Layers // <-- 'Layers' is back
 } from 'react-feather';
 
 // Firebase Imports
@@ -18,7 +18,6 @@ function GeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // --- NEW: Add Platform State ---
   const [platform, setPlatform] = useState('YouTube');
   const [descriptionLength, setDescriptionLength] = useState('Medium');
   const [language, setLanguage] = useState('English');
@@ -33,7 +32,6 @@ function GeneratorPage() {
         
         const prefs = item.preferences || {};
         setGameName(prefs.originalQuery || item.game);
-        // --- UPDATE: Load new preferences ---
         setPlatform(prefs.platform || 'YouTube');
         setDescriptionLength(prefs.descriptionLength || 'Medium');
         setLanguage(prefs.language || 'English');
@@ -52,43 +50,42 @@ function GeneratorPage() {
     setError(null);
     setResult(null);
 
-    // --- UPDATE: Add platform to preferences ---
+    // Get logoUrl from localStorage (set on the Settings page)
+    const logoUrl = localStorage.getItem('userLogoUrl'); 
+
     const userPreferences = {
       platform: platform,
       language: language,
       descriptionLength: descriptionLength,
+      logoUrl: logoUrl // Pass it in
     };
 
     try {
-      // --- Get Firebase Auth Token ---
       if (!auth.currentUser) {
         throw new Error("You must be logged in to generate content.");
       }
       const token = await auth.currentUser.getIdToken();
 
-      // --- TASK 1 FIX: Use relative API path ---
       const response = await axios.post('/api/generate', 
-        { // Payload
+        {
           gameName: gameName,
           ...userPreferences,
         },
-        { // Config with Auth Header
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        { 
+          headers: { 'Authorization': `Bearer ${token}` }
         }
       );
       
       const newResult = { ...response.data };
       setResult(newResult);
       
-      // --- TASK 2: SAVE TO FIRESTORE HISTORY ---
-      // Check if this exact game was already saved
+      // --- SAVE TO FIRESTORE HISTORY ---
       const historyCollection = collection(db, 'history');
       const q = query(
         historyCollection,
         where("uid", "==", auth.currentUser.uid),
         where("game", "==", newResult.game),
+        where("preferences.platform", "==", newResult.preferences.platform),
         limit(1)
       );
       
@@ -98,12 +95,11 @@ function GeneratorPage() {
         // Add new item to firestore
         await addDoc(historyCollection, {
           ...newResult, 
-          uid: auth.currentUser.uid, // Tag with user ID
-          createdAt: serverTimestamp() // Add timestamp
+          uid: auth.currentUser.uid,
+          createdAt: serverTimestamp()
         });
       } else {
-        // We could update the existing one, but for now we'll just skip
-        console.log("History item for this game already exists.");
+        console.log("History item for this game/platform already exists.");
       }
 
     } catch (err) {
@@ -133,8 +129,9 @@ function GeneratorPage() {
 
   return (
     <> 
+      {/* --- Input Form (unchanged) --- */}
       <form onSubmit={handleSubmit} className="input-form">
-        <div className="input-wrapper">
+         <div className="input-wrapper">
           <Search size={20} className="input-icon" />
           <input
             type="text"
@@ -145,7 +142,6 @@ function GeneratorPage() {
           />
         </div>
         
-        {/* --- UPDATE: 3-column settings row --- */}
         <div className="settings-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
           <div className="select-wrapper">
             <Monitor size={16} className="select-icon" />
@@ -202,6 +198,7 @@ function GeneratorPage() {
         </button>
       </form>
 
+      {/* --- Results Section --- */}
       {error && (
         <div className="error-message">
           <X size={20} /> {error}
@@ -210,7 +207,6 @@ function GeneratorPage() {
 
       {isLoading && !result && <div className="loading-spinner"></div>}
 
-      {/* --- UPDATE: Use new generic result keys --- */}
       {result && (
         <div className="results-card">
           <h2>Results for: {result.game}</h2>
@@ -233,20 +229,34 @@ function GeneratorPage() {
             </button>
           </div>
 
-          {/* Thumbnail Ideas */}
-          {result.thumbnailIdeas && (
+          {/* --- REVERTED: Thumbnail Recipe Section --- */}
+          {result.thumbnail && (
             <div className="result-item">
-              <label><ThumbsUp size={16} /> Generated Thumbnail Ideas</label>
+              <label><Layers size={16} /> Generated Thumbnail Recipe</label>
               <div className="thumbnail-ideas-container">
-                <p><strong>Idea 1:</strong> {result.thumbnailIdeas.idea_1}</p>
-                <p><strong>Idea 2:</strong> {result.thumbnailIdeas.idea_2}</p>
+                <p>
+                  <strong>Theme:</strong> {result.thumbnail.description}
+                </p>
                 <p>
                   <strong>Text Overlay:</strong> 
-                  <span className="thumbnail-text-tag">{result.thumbnailIdeas.text_overlay}</span>
+                  <span className="thumbnail-text-tag">{result.thumbnail.text_overlay}</span>
                 </p>
+                
+                <hr style={{ border: 0, borderTop: '1px solid var(--surface-border)', margin: '15px 0' }} />
+                
+                <strong>Layers (from bottom to top):</strong>
+                <ul className="thumbnail-layers-list">
+                  {result.thumbnail.layers.map((layer) => (
+                    <li key={layer.layer}>
+                      <span className="layer-type-tag">{layer.type}</span>
+                      <p>{layer.content}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
+          {/* --- END OF REVERT --- */}
 
           {/* Platform Description */}
           <div className="result-item">

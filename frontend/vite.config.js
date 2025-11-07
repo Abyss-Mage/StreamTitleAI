@@ -13,7 +13,7 @@ export default defineConfig({
     proxy: {
       // Proxies any request starting with /api to the backend
       '/api': {
-        target: 'https://c5c4ed119f5a.ngrok-free.app', // Your backend server address
+        target: 'https://a9b25c40c223.ngrok-free.app', // Your backend server address
         changeOrigin: true, // Recommended
         secure: false, // Set to false for http
       }

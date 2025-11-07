@@ -102,10 +102,7 @@
   color: var(--text-primary);
   outline: none;
   cursor: pointer;
-  /* The inline SVG for the arrow. 
-     It's long, but it's the most reliable way.
-     The fill color is set to a neutral gray.
-  */
+  /* The inline SVG for the arrow. */
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27292.4%27%20height%3D%27292.4%27%3E%3Cpath%20fill%3D%27%23${'a0a0b0'}%27%20d%3D%27M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-13%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2013l128%20128c3.6%203.6%207.8%205.4%2013%205.4s9.4-1.8%2013-5.4l128-128c3.6-3.6%205.4-7.8%205.4-13%200-4.9-1.8-9.2-5.4-12.8z%27%2F%3E%3C%2Fsvg%3E");
   background-repeat: no-repeat;
   background-position: right 16px top 50%;
@@ -443,12 +440,6 @@
   margin: 0;
 }
 
-/**
- * * THE FIX IS HERE:
- * We changed `.history-header h2` to `.history-section-page .history-header h2`
- * This makes the selector more specific than `.history-section-page h2`,
- * allowing the `margin: 0` override to work correctly.
- * */
 .history-section-page .history-header h2 {
   margin: 0;
 }
@@ -528,6 +519,39 @@
     font-size: 2rem;
   }
   .history-section-page .history-header h2 {
-  margin: 0;
+    margin: 0;
+  }
 }
+
+/* --- Settings Page Styles --- */
+/* Feature Removed */
+
+/* --- Thumbnail Recipe List Styles --- */
+.thumbnail-layers-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+}
+.thumbnail-layers-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+.thumbnail-layers-list li p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.layer-type-tag {
+  background: var(--bg-tag);
+  border: 1px solid var(--surface-border);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }

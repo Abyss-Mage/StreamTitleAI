@@ -109,3 +109,7 @@ config/*.local.json
 *.pyc
 __pycache__/
 Thumbs.db
+
+# --- Others ---
+firebase.js
+serviceAccountKey.json

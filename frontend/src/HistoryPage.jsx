@@ -58,13 +58,15 @@ function HistoryPage() {
         
       } catch (error) {
         console.error("Error fetching history: ", error);
-        alert("Could not load history.");
+        alert("Could not load history. (Did you create the Firestore Index?)");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchHistory();
+    if (auth.currentUser) {
+      fetchHistory();
+    }
   }, [auth.currentUser]); // Re-run if user changes
 
   const loadHistoryItem = (item) => {
