@@ -1,92 +1,137 @@
 # 🎮 StreamTitle.AI
 
-***AI-powered Stream & Video Title Generator for Gamers***
-Built using **Google Gemini**, **React (Vite)**, and **Express.js**
+### AI-Powered Channel Growth & Metadata for Content Creators
 
 ---
 
 ## 🧠 Overview
 
-**StreamTitle.AI** is an AI-driven platform designed for **streamers and gaming content creators**.
-Just enter the **name of a game or modpack**, and the system automatically performs background research and generates:
+**StreamTitle.AI** is an AI-driven platform that moves beyond simple text generation to become a complete, **data-driven growth partner** for streamers and gaming content creators.
 
-* 🎬 SEO-optimized YouTube titles
-* 📝 Engaging descriptions with emojis & markdown
-* 🏷️ Smart SEO tags
-* 💬 Prebuilt Discord announcement messages
-
-Powered by **Google Gemini**, the system intelligently identifies real games/modpacks using public APIs like **Steam** and **Curseforge**, ensuring **accurate, up-to-date, and trending results**.
+Its core purpose is to connect directly to your **YouTube** and **Twitch** channels, analyze your historical performance (CTR, retention, views), and build a **Keyword Effectiveness Index (KEI)** unique to you. It then uses this personal insight, along with your defined **Creator Profile** (tone, voice, banned words), to generate high-performance, TOS-safe metadata that you can publish with one click.
 
 ---
 
-## 🚀 Features
+## ✨ Current Features (V1)
 
-✅ **One-click AI Generation** – Just type a game name and get your full YouTube + Discord content package.
-✅ **Game Data Fetching** – Uses Steam & Curseforge APIs for verified game/modpack info.
-✅ **SEO & Trend Optimization** – Titles and tags optimized for 2025 gaming trends.
-✅ **Discord Integration** – Automatically formats announcement messages for your server.
-✅ **Fast Web Interface** – Built with Vite + React for a responsive, minimal UI.
-✅ **Expandable Backend** – Node.js + Express architecture ready for scaling and new features.
+The code in this repository reflects the **V1 build**, which includes:
 
----
+* 🧠 **AI Content Generation** – Uses **Google Gemini** to generate titles, descriptions, tags, and Discord announcements.
+* 🎨 **AI-Powered Thumbnail Recipes** – Generates a layer-by-layer thumbnail “recipe”, dynamically including a user-uploaded logo.
+* 🔍 **External Game APIs** – Intelligently identifies games via **Steam**, **CurseForge**, and **Modrinth** APIs to provide factual data.
+* 🔐 **Full Firebase Integration**:
 
-## 🏗️ Tech Stack
-
-| Layer                   | Technology                                      |
-| ----------------------- | ----------------------------------------------- |
-| **Frontend**            | React.js (Vite), Tailwind CSS                   |
-| **Backend**             | Node.js, Express.js                             |
-| **AI Engine**           | Google Gemini API (`@google/generative-ai`)     |
-| **Database (optional)** | Firebase / Firestore                            |
-| **External APIs**       | Steam (Game Data), Curseforge                   |
+  * **Authentication** – Secure login (Email/Password + Google).
+  * **Firestore** – Saves all generation history per user.
+  * **Storage** – Allows users to upload custom logos for thumbnails.
+* ⚙️ **Customizable Generation** – Choose platform (YouTube/Twitch/Kick), language, and description length.
 
 ---
 
-## ⚙️ Installation
+## 🚀 Future Roadmap (V2)
+
+V2 introduces **a full re-architecture** into a scalable, analytics-driven platform:
+
+### 🔗 Direct Channel Integration
+
+* OAuth for YouTube & Twitch
+* Reads analytics (CTR, views, retention)
+* Publishes metadata directly
+
+### 📊 Data-Driven AI (KEI)
+
+* AI analyzes your channel to create a **Keyword Effectiveness Index (KEI)**
+* Optimizes generations based on *your actual performance data*
+
+### ⚡ One-Click Publish
+
+* Transition from “copy & paste” to **“Preview & Publish”**
+* Auto-updates metadata and posts to Discord
+
+### 🧬 Creator-Specific Profiles
+
+* Define tone, banned words, and CTAs (e.g., socials)
+* AI respects your brand identity every time
+
+### 🛡️ AI Guardrails & Safe Mode
+
+* Integrates Perspective/OpenAI Moderation APIs
+* Detects and filters toxicity or clickbait
+
+### 🧠 Post-Stream Analysis
+
+* Auto-summarizes VODs
+* Suggests timestamps & highlights
+
+---
+
+## 🏗️ V2 Target Architecture
+
+| Component       | Technology          | Purpose                          |
+| --------------- | ------------------- | -------------------------------- |
+| **Frontend**    | Next.js             | SSR, performance, and modern UX  |
+| **API Gateway** | GCP                 | Unified API entry point          |
+| **App Server**  | NestJS / Express    | Modular backend logic            |
+| **Auth**        | Firebase + JWT      | Secure user auth & API access    |
+| **Async Jobs**  | Pub/Sub + Cloud Run | Scalable background processing   |
+| **Hot Storage** | Firestore           | Creator profiles & token storage |
+| **Cache**       | Redis               | Rate limiting & API caching      |
+| **Warehouse**   | BigQuery / GCS      | Stores analytics & powers KEI    |
+
+---
+
+## ⚙️ Installation (V1 – Current Code)
 
 ### 🧩 Prerequisites
 
-* Node.js (v18+ recommended)
+* Node.js (v18+)
 * npm or yarn
-* Google Gemini API key
-* Steam API key
-* Curseforge API key
+* A Google Cloud Project with:
+
+  * Google Gemini API Key
+  * Firebase (Auth, Firestore, Storage enabled)
+  * Steam API Key
+  * CurseForge API Key
 
 ---
 
 ### 🔧 Backend Setup
 
 ```bash
-# 1️⃣ Clone the Repository
-git clone https://github.com/yourusername/streamtitle-ai.git
-cd streamtitle-ai/backend
-
-# 2️⃣ Install Dependencies
+git clone https://github.com/abyss-mage/streamtitleai.git
+cd streamtitleai/backend
 npm install
-
-# 3️⃣ Create .env File
-touch .env
 ```
 
-Add your keys in `.env`:
+#### 🔐 Firebase Admin SDK
 
-```env
-GEMINI_API_KEY=your_google_gemini_api_key
-STEAM_API_KEY=your_steam_api_key
-CURSEFORGE_API_KEY=your_curseforge_api_key
-```
+1. Go to **Firebase Console → Project Settings → Service Accounts**
+2. Click **“Generate new private key”**
+3. Save it as `serviceAccountKey.json` in `/backend`
 
----
-
-### 🔧 Frontend Setup
-```
+#### 📄 Create `.env` file
 
 ```bash
-# 4️⃣ Start the Server
-npm run dev
+# Google Gemini API Key
+GEMINI_API_KEY=your_google_gemini_api_key
+
+# API Keys for Game Databases
+STEAM_API_KEY=your_steam_api_key
+CURSEFORGE_API_KEY=your_curseforge_api_key
+
+# Firebase Storage Bucket
+FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+
+# Server Port
+PORT=3001
 ```
 
-Backend runs on **[http://localhost:3001](http://localhost:3001)**
+#### ▶️ Run the Backend
+
+```bash
+npm run dev
+# Server runs on http://localhost:3001
+```
 
 ---
 
@@ -95,156 +140,24 @@ Backend runs on **[http://localhost:3001](http://localhost:3001)**
 ```bash
 cd ../frontend
 npm install
+```
+
+#### ⚙️ Configure Firebase
+
+Edit `frontend/src/firebase.js` with your Firebase Web App configuration.
+
+#### ▶️ Run the Frontend
+
+```bash
 npm run dev
+# Runs on http://localhost:80 or your configured Vite port
 ```
 
-Frontend runs on **[http://localhost:5173](http://localhost:5173)**
-
----
-
-## 🧠 API Endpoints
-
-### **POST /api/generate**
-
-Generate SEO-optimized content for a given game name.
-
-#### Request:
-
-```json
-{
-  "gameName": "Elden Ring"
-}
-```
-
-#### Response:
-
-```json
-{
-  "game": "Elden Ring",
-  "youtube": {
-    "title": "⚔️ Conquering the Lands Between – Elden Ring Live Adventure!",
-    "description": "Exploring the vast open world of Elden Ring... 🔥",
-    "tags": ["elden ring", "open world", "rpg", "gaming", "soulslike"]
-  },
-  "discord": {
-    "announcement": "🚀 Elden Ring stream is LIVE! ⚙️\n\nHey @everyone! ..."
-  }
-}
-```
-
----
-
-## 🌐 API Sources
-
-| Source                | Use                                                   |
-| --------------------- | ----------------------------------------------------- |
-| **Steam API**         | Game metadata (genres, developer, release, platforms) |
-| **Curseforge API**    | Minecraft modpack details                             |
-| **Google Gemini API** | Natural language generation for content creation      |
-
----
-
-## 🔒 Environment Variables
-
-| Variable                           | Description                        |
-| ---------------------------------- | ---------------------------------- |
-| `GEMINI_API_KEY`                   | Your Google Gemini API key         |
-| `STEAM_API_KEY`                    | Game database API key              |
-
----
-
-## 🧰 Folder Structure
-
-```
-StreamTitleAI/
-│
-├── backend/
-│   ├── index.js
-│   ├── package.json
-│   ├── .env
-│   └── /node_modules
-│
-├── frontend/
-│   ├── src/
-|   |   ├── assets/
-|   |   |    └── react.svg
-|   |   ├── App.css
-|   |   ├── App.jsx
-|   |   ├── index.css
-|   |   └── main.jsx
-|   ├── public/
-|   |   └── favicon.ico
-|   ├── index.html
-│   ├── vite.config.js
-│   ├── package.json
-│   └── /node_modules
-│
-├── .gitignore
-├── README.md
-└── LICENSE
-```
-
----
-
-## 💡 Example Usage
-
-**Input:**
-
-```
-Minecraft Create Modpack
-```
-
-**Output:**
-🎮 Title: *“Building the Ultimate Factory in Create Modpack – Automation Overload!”*
-📝 Description: *Jumping into the world of Create Mod for full automation chaos ⚙️...*
-🏷️ Tags: *["minecraft", "create mod", "automation", "survival", "factory build"]*
-💬 Discord: *“🚀 Create Mod Stream is LIVE!”*
-
----
-
-## 🧩 Future Enhancements
-
-* 🎯 Multi-language Support (English, Hindi, etc.)
-* 📈 AI-driven thumbnail ideas & titles split-testing
-* 🎥 YouTube API Integration for direct upload optimization
-* 🧠 Personalized presets (Funny, Cinematic, Competitive)
-* 📊 Dashboard analytics for trending games
-
----
-
-## 👥 Contributing
-
-1. Fork the repository
-2. Create your feature branch
-
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-3. Commit your changes
-
-   ```bash
-   git commit -m "Add new feature"
-   ```
-4. Push to the branch
-
-   ```bash
-   git push origin feature/your-feature
-   ```
-5. Create a Pull Request
+> The frontend proxy (`vite.config.js`) automatically forwards `/api` to `http://localhost:3001`.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — you’re free to use, modify, and distribute with attribution.
-
----
-
-## 💬 Contact
-
-**Developed by:** Abyss Mage
-📧 Email: [contact@abyssmage.fun](mailto:contact@abyssmage.fun)
-🌐 Website: [https://abyssmage.fun](https://abyssmage.fun)
-🐙 GitHub: [@abyssmage](https://github.com/abyss-mage)
-
----
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
+See the [LICENSE](LICENSE) file for full details.
