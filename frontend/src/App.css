@@ -648,3 +648,73 @@
   text-transform: uppercase;
   flex-shrink: 0;
 }
+/* --- NEW: Channel Connections --- */
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.connection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-input);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  gap: 12px;
+}
+.connection-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+.connection-info svg {
+  color: var(--text-secondary);
+}
+.connection-item[disabled] .connection-info {
+  opacity: 0.5;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.status-badge.connected {
+  background-color: rgba(4, 180, 4, 0.1);
+  color: #04b404;
+}
+.status-badge.disconnected {
+  background-color: rgba(255, 100, 100, 0.1);
+  color: #ff8b8b;
+}
+
+.connection-name {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.connect-btn {
+  background: var(--primary-gradient);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.connect-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px var(--primary-glow);
+}

@@ -6,6 +6,8 @@ require('dotenv').config();
 const axios = require('axios');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
+const { google } = require('googleapis'); // <-- NEW: Google API library
+const crypto = require('crypto'); // <-- NEW: Built-in for encryption
 
 // --- Configuration ---
 const app = express();
@@ -33,6 +35,39 @@ const MINECRAFT_GAME_ID = 432;
 // --- V2: JWT Secret ---
 const JWT_SECRET = process.env.JWT_SECRET || 'DEFAULT_SUPER_SECRET_KEY_REPLACE_ME';
 
+// --- NEW V2: YouTube OAuth Config ---
+// **IMPORTANT**: You must add these to your .env file
+const YOUTUBE_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID;
+const YOUTUBE_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET;
+// This *must* match the "Authorized redirect URIs" in your Google Cloud Console
+// for the OAuth 2.0 Client ID.
+const YOUTUBE_REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:80'; 
+
+// --- NEW V2: Encryption Config ---
+// **IMPORTANT**: Add a strong, 32-byte (e.g., 64 hex chars) key to your .env
+const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || 'a'.repeat(64); // 64 'a's is a placeholder
+const ALGORITHM = 'aes-256-cbc';
+const IV_LENGTH = 16;
+const key = crypto.createHash('sha256').update(String(ENCRYPTION_KEY)).digest('base64').substring(0, 32);
+
+function encrypt(text) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(key), iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+  const textParts = text.split(':');
+  const iv = Buffer.from(textParts.shift(), 'hex');
+  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(key), iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
+}
+
 // --- V2: API JWT Verification Middleware ---
 async function verifyApiToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -57,7 +92,6 @@ Examples: User: "bg3" -> "Baldur's Gate 3", User: "cod mw3" -> "Call of Duty: Mo
 If it's ambiguous or not a game, just return the original text.`;
 
 // --- V2 Core Generation Prompt (The "Brain") ---
-// This prompt is now personalized and reads the creatorProfile
 const systemPrompt = `
 You are StreamTitle.AI, a world-class creative writer for gaming content creators.
 Your sole purpose is to generate highly detailed, SEO-optimized, and community-aware content packages.
@@ -121,7 +155,6 @@ You MUST return ONLY a valid, minified JSON object using this exact structure.
 
 // --- Error Function (Helper) ---
 function createErrorResponse(inputName, message, originalQuery, prefs) {
-    // (Function is unchanged)
     return {
         game: "Invalid Input",
         platformTitle: "🎮 Error: Content Not Found",
@@ -143,6 +176,7 @@ function createErrorResponse(inputName, message, originalQuery, prefs) {
         }
     };
 }
+
 
 // --- V2: Auth Exchange Endpoint ---
 app.post('/api/v1/auth/exchange', async (req, res) => {
@@ -170,7 +204,6 @@ app.get('/api/v1/profile', verifyApiToken, async (req, res) => {
     const doc = await profileRef.get();
 
     if (!doc.exists) {
-      // Return a default, empty profile if one doesn't exist
       res.json({
         tone: '',
         voiceGuidelines: '',
@@ -199,6 +232,99 @@ app.put('/api/v1/profile', verifyApiToken, async (req, res) => {
   } catch (error) {
     console.error('Error saving profile:', error);
     res.status(500).send('Failed to save profile.');
+  }
+});
+
+
+// --- NEW V2: Channel Connection Endpoints ---
+
+// GET /api/v1/connections
+// Checks which services are connected and returns their status.
+app.get('/api/v1/connections', verifyApiToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    
+    // Check for YouTube connection
+    const ytDocRef = db.collection('connections').doc(uid).collection('youtube').doc('tokens');
+    const ytDoc = await ytDocRef.get();
+    const ytChannelName = ytDoc.exists ? ytDoc.data().channelName : null;
+    
+    // Check for Twitch (placeholder)
+    const twDocRef = db.collection('connections').doc(uid).collection('twitch').doc('tokens');
+    const twDoc = await twDocRef.get();
+    const twChannelName = twDoc.exists ? twDoc.data().channelName : null;
+
+    res.json({
+      youtube: {
+        connected: ytDoc.exists,
+        channelName: ytChannelName,
+      },
+      twitch: {
+        connected: twDoc.exists,
+        channelName: twChannelName,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error fetching connections:", error);
+    res.status(500).send('Failed to fetch connection status.');
+  }
+});
+
+// POST /api/v1/auth/connect/youtube
+// Exchanges a one-time code for OAuth tokens and saves them.
+app.post('/api/v1/auth/connect/youtube', verifyApiToken, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const uid = req.user.uid;
+    if (!code) {
+      return res.status(400).send('No authorization code provided.');
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+      YOUTUBE_CLIENT_ID,
+      YOUTUBE_CLIENT_SECRET,
+      YOUTUBE_REDIRECT_URI
+    );
+
+    // 1. Exchange the code for tokens
+    const { tokens } = await oauth2Client.getToken(code);
+    const { access_token, refresh_token, scope } = tokens;
+
+    if (!access_token || !refresh_token) {
+      return res.status(400).send('Failed to retrieve refresh token. Please re-auth and ensure you grant offline access.');
+    }
+
+    // 2. Get Channel Info
+    oauth2Client.setCredentials(tokens);
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    const channelResponse = await youtube.channels.list({
+      part: 'snippet',
+      mine: true,
+    });
+
+    const channel = channelResponse.data.items[0];
+    const channelId = channel.id;
+    const channelName = channel.snippet.title;
+
+    // 3. Encrypt and Save Tokens
+    const connectionRef = db.collection('connections').doc(uid).collection('youtube').doc('tokens');
+    
+    await connectionRef.set({
+      channelId: channelId,
+      channelName: channelName,
+      scope: scope,
+      accessToken: encrypt(access_token), // <-- Encrypted
+      refreshToken: encrypt(refresh_token), // <-- Encrypted
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`[StreamTitle.AI] Successfully connected YouTube channel for user ${uid}`);
+    res.json({ success: true, channelName: channelName });
+
+  } catch (error) {
+    console.error("[StreamTitle.AI] Error connecting YouTube:", error.message);
+    res.status(500).send('Failed to connect YouTube account.');
   }
 });
 
