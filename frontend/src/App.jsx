@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import './App.css'; 
 import { Sun, Moon, Clock, Home, LogIn, LogOut, Settings } from 'react-feather';
+import axios from 'axios'; // <-- IMPORT AXIOS
 
 // Firebase Imports
 import { auth } from './firebase';
@@ -29,8 +30,36 @@ function useAuth() {
   
   useEffect(() => {
     // onAuthStateChanged returns an unsubscribe function
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user); // Will be null if logged out, user object if logged in
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // --- V2 AUTH FLOW ---
+        try {
+          // 1. Get Firebase ID Token
+          const idToken = await user.getIdToken();
+          
+          // 2. Exchange it for our custom API JWT
+          const response = await axios.post('/api/v1/auth/exchange', { token: idToken });
+          const { apiToken } = response.data;
+
+          // 3. Store the new API JWT
+          localStorage.setItem('apiToken', apiToken);
+          
+          setCurrentUser(user);
+
+        } catch (error) {
+          console.error("Auth Exchange Error:", error);
+          // Failed to get API token, force sign out
+          await signOut(auth);
+          setCurrentUser(null);
+          localStorage.removeItem('apiToken');
+        }
+        // --- END V2 FLOW ---
+
+      } else {
+        // User is signed out
+        setCurrentUser(null);
+        localStorage.removeItem('apiToken');
+      }
     });
     
     // Cleanup subscription on unmount
@@ -58,6 +87,7 @@ function App() {
 
   const handleSignOut = async () => {
     await signOut(auth);
+    localStorage.removeItem('apiToken'); // Clear API token on sign out
     navigate('/login'); // Redirect to login after sign out
   };
   

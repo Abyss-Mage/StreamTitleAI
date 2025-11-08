@@ -5,6 +5,7 @@ const cors = require('cors');
 require('dotenv').config();
 const axios = require('axios');
 const admin = require('firebase-admin');
+const jwt = require('jsonwebtoken');
 
 // --- Configuration ---
 const app = express();
@@ -19,6 +20,9 @@ admin.initializeApp({
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET 
 });
 
+// --- Get Firestore instance ---
+const db = admin.firestore();
+
 // --- AI & API Clients (Reading from .env) ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const steamApiKey = process.env.STEAM_API_KEY; 
@@ -26,20 +30,23 @@ const curseforgeApiKey = process.env.CURSEFORGE_API_KEY;
 const mainModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 const MINECRAFT_GAME_ID = 432;
 
-// --- Firebase Auth Middleware ---
-async function verifyFirebaseToken(req, res, next) {
+// --- V2: JWT Secret ---
+const JWT_SECRET = process.env.JWT_SECRET || 'DEFAULT_SUPER_SECRET_KEY_REPLACE_ME';
+
+// --- V2: API JWT Verification Middleware ---
+async function verifyApiToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).send('Unauthorized: No token provided.');
+    return res.status(401).send('Unauthorized: No API token provided.');
   }
-  const idToken = authHeader.split('Bearer ')[1];
+  const apiToken = authHeader.split('Bearer ')[1];
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken; 
+    const decoded = jwt.verify(apiToken, JWT_SECRET);
+    req.user = decoded; 
     next();
   } catch (error) {
-    console.error('Error verifying token:', error);
-    return res.status(403).send('Unauthorized: Invalid token.');
+    console.error('Error verifying API token:', error);
+    return res.status(403).send('Unauthorized: Invalid API token.');
   }
 }
 
@@ -49,19 +56,14 @@ Respond with ONLY the full, official, searchable title of the game.
 Examples: User: "bg3" -> "Baldur's Gate 3", User: "cod mw3" -> "Call of Duty: Modern Warfare III"
 If it's ambiguous or not a game, just return the original text.`;
 
-// --- Core Generation Prompt (The "Brain") ---
-// --- REVERTED TO TEXT RECIPE ---
+// --- V2 Core Generation Prompt (The "Brain") ---
+// This prompt is now personalized and reads the creatorProfile
 const systemPrompt = `
 You are StreamTitle.AI, a world-class creative writer for gaming content creators.
 Your sole purpose is to generate highly detailed, SEO-optimized, and community-aware content packages.
 
-You will be given "facts" (verified game data) and "preferences".
-"preferences" contains "language", "descriptionLength", "platform", and "logoUrl".
-
-You MUST adhere to all preferences.
-You MUST generate a creative package.
-You MUST follow the "Success JSON Structure" below.
-You MUST return ONLY a valid, minified JSON object.
+You will be given "facts" (verified game data), "preferences" (language, length), and a "creatorProfile" (tone, voice, banned words).
+You MUST follow all instructions from the "creatorProfile".
 
 ---
 **Input Data Structure (Example)**
@@ -70,58 +72,47 @@ You MUST return ONLY a valid, minified JSON object.
   "preferences": {
     "language": "English",
     "descriptionLength": "Medium",
-    "platform": "YouTube",
-    "logoUrl": "https://.../logo.png" 
+    "platform": "YouTube"
+  },
+  "creatorProfile": {
+    "tone": "Funny, chaotic, and high-energy",
+    "voiceGuidelines": "Always use 🚀 emojis, never use 'lol'",
+    "bannedWords": ["MyOldChannelName", "Boring"],
+    "defaultCTAs": ["https://discord.gg/my-server", "https://patreon.com/me"],
+    "logoUrl": "https://i.imgur.com/my-logo.png"
   }
 }
 ---
 
-**User Preferences Guide:**
-1.  **platform**, **language**, **descriptionLength**: (Same as before)
-2.  **logoUrl**: If this is provided, you MUST include a "logo_placement" layer in the thumbnail. If it is null, you MUST NOT include a "logo_placement" layer.
+**Creator Profile Rules (CRITICAL):**
+1.  **tone**: You MUST match this tone (e.g., "Funny, chaotic" or "Calm, informative").
+2.  **voiceGuidelines**: You MUST obey these specific rules (e.g., "Always start with a question").
+3.  **bannedWords**: You MUST NOT use any words from this list.
+4.  **defaultCTAs**: You MUST include these links in the \`platformDescription\`.
 
----
-**Thumbnail Generation Guide (NEW):**
-You MUST generate a detailed, layer-by-layer "recipe" for a thumbnail.
-This recipe MUST be visual and based on the game's "facts".
+**Thumbnail Generation Guide:**
+* You MUST generate a detailed, layer-by-layer "recipe" for a thumbnail.
+* If \`creatorProfile.logoUrl\` is provided (not null/empty), you MUST include a "logo_placement" layer.
+* If \`creatorProfile.logoUrl\` is null or empty, you MUST NOT include a "logo_placement" layer.
 
----
-
-**Success JSON Structure (Your Output)**
-(You MUST use these exact keys. Fill them creatively based on the 'platform' preference.)
+**Output Structure (Your Output):**
+You MUST return ONLY a valid, minified JSON object using this exact structure.
 {
   "game": "The Game/Modpack Name You Were Given",
-  "platformTitle": "[A catchy, platform-aware title in the target language]",
-  "platformDescription": "[A complete, multi-part description...]",
+  "platformTitle": "[A catchy, platform-aware title in the target language, matching the creator's 'tone']",
+  "platformDescription": "[A complete, multi-part description, matching the 'tone' and 'voiceGuidelines'. It MUST include all 'defaultCTAs' links.]",
   "platformTags": ["tag1", "tag2", "tag3"],
-  "discordAnnouncement": "🚀 [Stream Title] is LIVE! ...",
+  "discordAnnouncement": "🚀 [Stream Title] is LIVE! ... [Must also match 'tone']",
 
   "thumbnail": {
-    "description": "[A 1-sentence summary of the thumbnail's theme, e.g., 'A high-contrast thumbnail showing the final boss.']",
-    "text_overlay": "[Suggested text to put on the thumbnail, e.g., 'THE IMPOSSIBLE BOSS?' or 'MY NEW FACTORY!']",
+    "description": "[A 1-sentence summary of the thumbnail's theme.]",
+    "text_overlay": "[Suggested text to put on the thumbnail.]",
     "layers": [
-      { 
-        "layer": 1, 
-        "type": "background", 
-        "content": "[A visual idea for the background, e.g., 'A high-saturation, slightly blurred screenshot of the game world.']" 
-      },
-      { 
-        "layer": 2, 
-        "type": "main_subject", 
-        "content": "[The main visual element, e.g., 'A high-resolution image of the game's main character or boss on the right side.']" 
-      },
-      { 
-        "layer": 3, 
-        "type": "text_overlay", 
-        "content": "[A description of the text, e.g., 'The text \\"THE IMPOSSIBLE BOSS?\\" in a bold, white font with a black outline.']"
-      },
-      { 
-        "layer": 4, 
-        "type": "logo_placement", 
-        "content": "User's channel logo placed in the bottom-left corner." 
-      }
-      // You MUST NOT include layer 4 if 'logoUrl' was null.
-      // You can add more layers (e.g., 'effects', 'borders') if you think they are creative.
+      { "layer": 1, "type": "background", "content": "[A visual idea for the background.]" },
+      { "layer": 2, "type": "main_subject", "content": "[The main visual element.]" },
+      { "layer": 3, "type": "text_overlay", "content": "[A description of the text.]" },
+      { "layer": 4, "type": "logo_placement", "content": "User's channel logo placed in the bottom-left corner." }
+      // Layer 4 is ONLY included if 'creatorProfile.logoUrl' was provided.
     ]
   }
 }
@@ -129,8 +120,8 @@ This recipe MUST be visual and based on the game's "facts".
 `;
 
 // --- Error Function (Helper) ---
-// --- REVERTED TO TEXT RECIPE ERROR ---
 function createErrorResponse(inputName, message, originalQuery, prefs) {
+    // (Function is unchanged)
     return {
         game: "Invalid Input",
         platformTitle: "🎮 Error: Content Not Found",
@@ -153,27 +144,101 @@ function createErrorResponse(inputName, message, originalQuery, prefs) {
     };
 }
 
+// --- V2: Auth Exchange Endpoint ---
+app.post('/api/v1/auth/exchange', async (req, res) => {
+  try {
+    const idToken = req.body.token;
+    if (!idToken) {
+      return res.status(400).send('Firebase token is required');
+    }
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email } = decodedToken;
+    const apiTokenPayload = { uid, email };
+    const apiToken = jwt.sign(apiTokenPayload, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ apiToken });
+  } catch (error) {
+    console.error('Error during token exchange:', error);
+    res.status(401).send('Authentication failed.');
+  }
+});
 
-// --- API Endpoint ---
-app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
+// --- V2: Creator Profile API Endpoints ---
+app.get('/api/v1/profile', verifyApiToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const profileRef = db.collection('creatorProfiles').doc(uid);
+    const doc = await profileRef.get();
+
+    if (!doc.exists) {
+      // Return a default, empty profile if one doesn't exist
+      res.json({
+        tone: '',
+        voiceGuidelines: '',
+        bannedWords: [],
+        defaultCTAs: [],
+        logoUrl: '',
+      });
+    } else {
+      res.json(doc.data());
+    }
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).send('Failed to fetch profile.');
+  }
+});
+
+app.put('/api/v1/profile', verifyApiToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const profileData = req.body;
+    const profileRef = db.collection('creatorProfiles').doc(uid);
+    
+    await profileRef.set(profileData, { merge: true });
+
+    res.json({ success: true, data: profileData });
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    res.status(500).send('Failed to save profile.');
+  }
+});
+
+
+// --- V2: Generation API Endpoint (Updated) ---
+app.post('/api/generate', verifyApiToken, async (req, res) => {
     try {
+        // 1. Get user preferences from request body
         const { 
           gameName, 
           platform = 'YouTube', 
           language = 'English', 
-          descriptionLength = 'Medium',
-          logoUrl = null 
+          descriptionLength = 'Medium'
         } = req.body;
         
         const uid = req.user.uid; 
         console.log(`[StreamTitle.AI] Request from user ${uid} for: ${gameName}`);
-        const userPreferences = { platform, language, descriptionLength, logoUrl };
+        
+        // 2. Create user preferences object
+        const userPreferences = { platform, language, descriptionLength };
         
         if (!gameName) {
             return res.status(400).json({ error: 'Game name is required' });
         }
 
-        // --- Name Expansion ---
+        // --- 3. NEW: Fetch Creator Profile ---
+        let creatorProfile = {};
+        try {
+          const profileRef = db.collection('creatorProfiles').doc(uid);
+          const doc = await profileRef.get();
+          if (doc.exists) {
+            creatorProfile = doc.data();
+          } else {
+            console.log(`[StreamTitle.AI] No profile found for user ${uid}, using defaults.`);
+          }
+        } catch (profileError) {
+          console.error('[StreamTitle.AI] Error fetching profile, proceeding without it:', profileError);
+        }
+
+        // --- Name Expansion (Unchanged) ---
         let officialGameName = gameName;
         try {
             console.log(`[StreamTitle.AI] Expanding short form: "${gameName}"`);
@@ -197,16 +262,15 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             officialGameName = gameName;
         }
         
-        console.log(`[StreamTitle.AI] Preferences: Platform=${platform}, Lang=${language}, Length=${descriptionLength}, Logo=${!!logoUrl}`);
+        console.log(`[StreamTitle.AI] Preferences: Platform=${platform}, Lang=${language}, Length=${descriptionLength}`);
         console.log(`[StreamTitle.AI] Searching APIs with name: "${officialGameName}"`);
 
         let factsForAI = null;
         let found = false;
 
-        // --- Steam Search ---
+        // --- Steam Search (Unchanged) ---
         try {
             console.log(`[StreamTitle.AI] Checking Steam Store API for "${officialGameName}"...`);
-            // --- FIX: Added quotes around URL ---
             const searchResponse = await axios.get('https://store.steampowered.com/api/storesearch/', {
                 params: { term: officialGameName, l: 'en', cc: 'us' }
             });
@@ -214,7 +278,6 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             if (searchResponse.data.items && searchResponse.data.items.length > 0) {
                 const gameAppId = searchResponse.data.items[0].id;
                 console.log(`[StreamTitle.AI] Found Steam AppID: ${gameAppId}`);
-                // --- FIX: Added quotes around URL ---
                 const detailsResponse = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${gameAppId}`);
                 
                 if (detailsResponse.data && detailsResponse.data[gameAppId] && detailsResponse.data[gameAppId].data) {
@@ -233,11 +296,10 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             console.error('[StreamTitle.AI] Error calling Steam API:', apiError.message);
         }
 
-        // --- Modrinth Search ---
+        // --- Modrinth Search (Unchanged) ---
         if (!found) {
             try {
                 console.log(`[StreamTitle.AI] Checking Modrinth API for "${officialGameName}"...`);
-                // --- FIX: Added quotes around URL ---
                 const modrinthSearch = await axios.get('https://api.modrinth.com/v2/search', {
                     params: { query: officialGameName, limit: 1, facets: '[["project_type:modpack"]]' }
                 });
@@ -254,11 +316,10 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             }
         }
 
-        // --- CurseForge Search ---
+        // --- CurseForge Search (Unchanged) ---
         if (!found && curseforgeApiKey) {
             try {
                 console.log(`[StreamTitle.AI] Checking CurseForge API for "${officialGameName}"...`);
-                // --- FIX: Added quotes around URL ---
                 const curseForgeSearch = await axios.get('https://api.curseforge.com/v1/mods/search', {
                     params: { gameId: MINECRAFT_GAME_ID, searchFilter: officialGameName, classId: 4471, pageSize: 1 },
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'x-api-key': curseforgeApiKey }
@@ -278,7 +339,7 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             }
         }
 
-        // --- Error if not found ---
+        // --- Error if not found (Unchanged) ---
         if (!found) {
             console.log(`[StreamTitle.AI] Content not found in any database.`);
             return res.status(404).json(createErrorResponse(
@@ -290,7 +351,7 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
         }
 
         // -----------------------------------------------------------------
-        // STEP 5: GENERATION PHASE (TEXT ONLY)
+        // STEP 5: GENERATION PHASE (NOW WITH PROFILE)
         // -----------------------------------------------------------------
         console.log(`[StreamTitle.AI] Sending data to Gemini for text generation...`);
 
@@ -299,7 +360,12 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
             generationConfig: { maxOutputTokens: 8192, temperature: 0.8 },
         });
 
-        const aiRequestPayload = { facts: factsForAI, preferences: userPreferences };
+        // --- UPDATED: The payload now includes the creatorProfile ---
+        const aiRequestPayload = { 
+          facts: factsForAI, 
+          preferences: userPreferences, 
+          creatorProfile: creatorProfile 
+        };
         const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
         const response = await result.response;
         const rawText = response.text();
@@ -311,8 +377,7 @@ app.post('/api/generate', verifyFirebaseToken, async (req, res) => {
 
         const jsonResponse = JSON.parse(match[0]);
 
-        // --- NO IMAGE GENERATION STEP ---
-
+        // --- Add preferences back for the frontend (e.g., loading history) ---
         jsonResponse.preferences = { ...userPreferences, originalQuery: gameName };
         res.json(jsonResponse);
 

@@ -524,7 +524,100 @@
 }
 
 /* --- Settings Page Styles --- */
-/* Feature Removed */
+.settings-page-container {
+  max-width: 760px; /* Ensures cards are centered */
+  margin: 0 auto;
+}
+.settings-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: -20px;
+  margin-bottom: 25px;
+}
+.settings-upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.logo-preview {
+  margin-top: 20px;
+}
+.logo-preview img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid var(--surface-border);
+  object-fit: cover;
+}
+.logo-preview p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 5px;
+}
+
+/* New Form Styles for Creator Profile */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-group label {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-group p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+.form-group input,
+.form-group textarea {
+  /* Reuse existing input styles */
+  background: var(--bg-input);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box; /* Important for padding */
+}
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: 'Inter', sans-serif;
+}
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+.success-message {
+  color: #8bff8b;
+  background-color: rgba(100, 255, 100, 0.1);
+  border: 1px solid rgba(100, 255, 100, 0.3);
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 500;
+}
 
 /* --- Thumbnail Recipe List Styles --- */
 .thumbnail-layers-list {

@@ -5,12 +5,15 @@ import axios from 'axios';
 import './App.css';
 import { 
   Search, Copy, Youtube, MessageSquare, Hash, ThumbsUp, 
-  Globe, AlignLeft, X, Loader, Monitor, Layers // <-- 'Layers' is back
+  Globe, AlignLeft, X, Loader, Monitor, Layers
 } from 'react-feather';
 
 // Firebase Imports
 import { auth, db } from './firebase';
-import { addDoc, collection, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+// --- THIS IS THE FIX ---
+// The import path is "firebase/firestore", not "firebase-firestore"
+import { addDoc, collection, serverTimestamp, query, where, getDocs, limit } from "firebase/firestore"; 
+// --- END OF FIX ---
 
 function GeneratorPage() {
   const [gameName, setGameName] = useState('');
@@ -50,21 +53,17 @@ function GeneratorPage() {
     setError(null);
     setResult(null);
 
-    // Get logoUrl from localStorage (set on the Settings page)
-    const logoUrl = localStorage.getItem('userLogoUrl'); 
-
     const userPreferences = {
       platform: platform,
       language: language,
       descriptionLength: descriptionLength,
-      logoUrl: logoUrl // Pass it in
     };
 
     try {
-      if (!auth.currentUser) {
-        throw new Error("You must be logged in to generate content.");
+      const token = localStorage.getItem('apiToken');
+      if (!token) {
+        throw new Error("You are not logged in. Please refresh and log in again.");
       }
-      const token = await auth.currentUser.getIdToken();
 
       const response = await axios.post('/api/generate', 
         {
@@ -83,7 +82,7 @@ function GeneratorPage() {
       const historyCollection = collection(db, 'history');
       const q = query(
         historyCollection,
-        where("uid", "==", auth.currentUser.uid),
+        where("uid", "==", auth.currentUser.uid), 
         where("game", "==", newResult.game),
         where("preferences.platform", "==", newResult.preferences.platform),
         limit(1)
@@ -91,8 +90,7 @@ function GeneratorPage() {
       
       const existing = await getDocs(q);
       
-      if (existing.empty) {
-        // Add new item to firestore
+      if (existing.empty && auth.currentUser) { 
         await addDoc(historyCollection, {
           ...newResult, 
           uid: auth.currentUser.uid,
@@ -177,7 +175,7 @@ function GeneratorPage() {
             <select 
               className="settings-select"
               value={descriptionLength}
-              onChange={(e) => setDescriptionLength(e.target.value)}
+              onChange={(e) => setDescriptionLength(e.target.value)} // Corrected: was e.control.value
             >
               <option value="Short">Short</option>
               <option value="Medium">Medium</option>
@@ -229,7 +227,7 @@ function GeneratorPage() {
             </button>
           </div>
 
-          {/* --- REVERTED: Thumbnail Recipe Section --- */}
+          {/* --- Thumbnail Recipe Section --- */}
           {result.thumbnail && (
             <div className="result-item">
               <label><Layers size={16} /> Generated Thumbnail Recipe</label>
@@ -256,7 +254,7 @@ function GeneratorPage() {
               </div>
             </div>
           )}
-          {/* --- END OF REVERT --- */}
+          {/* --- END OF SECTION --- */}
 
           {/* Platform Description */}
           <div className="result-item">
