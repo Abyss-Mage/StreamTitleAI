@@ -1,4 +1,4 @@
-# 🧠 StreamTitle.AI — Internal Developer Documentation  
+# 🧠 StreamTitle.AI — Developer Documentation  
 **Version:** 2.5 → 3.0 (Development Roadmap)  
 **Maintained by:** SafeHouse Studios (Lead Dev: Abyss Mage)  
 **Status:** Actively in development  
