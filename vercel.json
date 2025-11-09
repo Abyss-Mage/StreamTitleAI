@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "frontend/package.json",
-      "use": "@vercel/vite"
+      "use": "@vercel/static-build",
+      "builds": {
+        "outputDirectory": "dist"
+      }
     },
     {
       "src": "backend/index.js",
