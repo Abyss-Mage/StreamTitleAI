@@ -1,19 +1,24 @@
 // frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css'; 
-import { Sun, Moon, Clock, Home, LogIn, LogOut, Settings } from 'react-feather';
-import axios from 'axios'; // <-- IMPORT AXIOS
+import axios from 'axios'; 
 
 // Firebase Imports
-import { auth } from './firebase';
+import { auth } from './firebase.js'; 
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 // Page Imports
-import GeneratorPage from './GeneratorPage';
-import HistoryPage from './HistoryPage';
-import LoginPage from './LoginPage';
-import SettingsPage from './SettingsPage';
+import GeneratorPage from './GeneratorPage.jsx';
+import HistoryPage from './HistoryPage.jsx';
+import LoginPage from './LoginPage.jsx';
+import SettingsPage from './SettingsPage.jsx';
+
+// V3 Layout & Page Imports
+import SidebarLayout from './layouts/SidebarLayout.jsx';
+import HomePage from './pages/HomePage.jsx';
+import DiscoverPage from './pages/DiscoverPage.jsx'; 
+import OptimizePage from './pages/OptimizePage.jsx';
 
 // A simple component to protect routes
 function ProtectedRoute({ children }) {
@@ -24,8 +29,8 @@ function ProtectedRoute({ children }) {
   return currentUser ? children : <Navigate to="/login" replace />;
 }
 
-// Custom hook to manage auth state
-function useAuth() {
+// Custom hook to manage auth state - EXPORTED
+export function useAuth() {
   const [currentUser, setCurrentUser] = useState(undefined); // Start as undefined to check auth
   
   useEffect(() => {
@@ -38,6 +43,7 @@ function useAuth() {
           const idToken = await user.getIdToken();
           
           // 2. Exchange it for our custom API JWT
+          // Use the V2 endpoint
           const response = await axios.post('/api/v1/auth/exchange', { token: idToken });
           const { apiToken } = response.data;
 
@@ -73,8 +79,7 @@ function App() {
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || 'dark'
   );
-  const [currentUser] = useAuth();
-  const navigate = useNavigate();
+  const [currentUser] = useAuth(); // We still need this for the login check
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -84,110 +89,52 @@ function App() {
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    localStorage.removeItem('apiToken'); // Clear API token on sign out
-    navigate('/login'); // Redirect to login after sign out
-  };
   
   return (
-    <div className="container">
-      
-      <header className="app-header">
-        <h1 className="main-title">StreamTitle.AI</h1>
-        
-        {currentUser && (
-          <nav className="main-nav">
-            <NavLink 
-              to="/" 
-              className={({ isActive }) => "nav-link" + (isActive ? " nav-link-active" : "")}
-            >
-              <Home size={18} />
-              <span>Generator</span>
-            </NavLink>
-            
-            <NavLink 
-              to="/history" 
-              className={({ isActive }) => "nav-link" + (isActive ? " nav-link-active" : "")}
-            >
-              <Clock size={18} />
-              <span>History</span>
-            </NavLink>
-
-            <NavLink 
-              to="/settings" 
-              className={({ isActive }) => "nav-link" + (isActive ? " nav-link-active" : "")}
-            >
-              <Settings size={18} />
-              <span>Settings</span>
-            </NavLink>
-          </nav>
-        )}
-
-        {currentUser ? (
-          <button onClick={handleSignOut} className="theme-toggle-btn" title="Sign Out">
-            <LogOut size={20} />
-          </button>
-        ) : (
-          <NavLink 
-            to="/login" 
-            className="theme-toggle-btn"
-            title="Login"
-            style={{ textDecoration: 'none' }}
-          >
-            <LogIn size={20} />
-          </NavLink>
-        )}
-        
-        <button onClick={toggleTheme} className="theme-toggle-btn" title="Toggle theme">
-          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-        </button>
-      </header>
-      
+    <>
       <main>
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <GeneratorPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/history" 
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/settings" 
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            } 
-          />
           <Route 
             path="/login" 
             element={
               currentUser === undefined ? (
                 <div className="loading-spinner"></div> // Wait for auth to load
               ) : currentUser ? (
-                <Navigate to="/" replace /> // User is logged in, redirect to generator
+                <Navigate to="/home" replace /> // User is logged in, redirect to NEW home
               ) : (
                 <LoginPage /> // User is logged out, show login page
               )
             } 
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          
+          {/* --- NEW V3 Protected Route Structure --- */}
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                {/* Pass theme props to the layout */}
+                <SidebarLayout theme={theme} toggleTheme={toggleTheme} />
+              </ProtectedRoute>
+            }
+          >
+            {/* These routes render inside SidebarLayout's <Outlet /> */}
+            <Route index element={<Navigate to="/home" replace />} />
+            <Route path="home" element={<HomePage />} />
+            <Route path="generator" element={<GeneratorPage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            
+            {/* V3 Pages */}
+            <Route path="optimize" element={<OptimizePage />} />
+            <Route path="discover" element={<DiscoverPage />} />
+            <Route path="coach" element={<div className="results-card" style={{marginTop: 0}}><h2>AI Coach (Coming Soon)</h2></div>} />
+          </Route>
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </main>
-
-    </div>
+    </>
   );
 }
 

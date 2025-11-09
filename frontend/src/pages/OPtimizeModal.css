@@ -1,0 +1,215 @@
+/* frontend/src/pages/OptimizeModal.css */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--bg-color-2);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--surface-color);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.modal-close-btn:hover {
+  background: var(--primary-color);
+  color: var(--text-on-primary);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-color);
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-thumbnail {
+  width: 120px;
+  height: 67.5px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--surface-border);
+  flex-shrink: 0;
+}
+
+.modal-header-info h2 {
+  margin: 0 0 5px 0;
+  color: var(--text-primary);
+}
+.modal-header-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  /* Clamp to 1 line */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-body {
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.modal-start-state {
+  text-align: center;
+  padding: 20px;
+}
+.modal-start-state p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto 25px auto;
+}
+
+/* --- Results --- */
+.results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.suggestion-summary {
+  background: var(--bg-input);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+.suggestion-summary h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.suggestion-summary p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.score-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--primary-gradient);
+  color: var(--text-on-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.old-score {
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-left: 8px;
+}
+
+.suggestion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.suggestion-item h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.comparison-box {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+.arrow-icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.text-box {
+  background: var(--bg-input);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  position: relative;
+}
+.text-box .text-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+.text-box p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-wrap; /* Renders newlines */
+}
+.text-box.old-text p {
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+.text-box .copy-btn {
+  top: 14px;
+  right: 14px;
+}

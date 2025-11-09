@@ -1,0 +1,73 @@
+/* frontend/src/pages/DiscoverPage.css */
+
+.discover-header {
+  margin-bottom: 25px;
+}
+
+.discover-header h2 {
+  margin: 0;
+}
+
+.discover-header p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin: 10px 0 0 0;
+}
+
+.tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--surface-border);
+  margin-bottom: 25px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  transform: translateY(1px); /* Aligns with the border */
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--surface-color);
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+  /* Content will be styled by the tab components */
+}
+
+/* Placeholder styles for soon-to-be-filled tabs */
+.placeholder-tab {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--bg-input);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+}
+.placeholder-tab h3 {
+  color: var(--text-primary);
+  margin: 20px 0 10px 0;
+}
+.placeholder-tab p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.6;
+}

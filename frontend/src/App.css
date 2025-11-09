@@ -1,11 +1,7 @@
 /* frontend/src/App.css */
-/* This is a full replacement */
-
-.container {
-  width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
-}
+/* This is the updated file with old layout styles removed. */
+/* All .container, .app-header, .main-title, .main-nav, .nav-link, */
+/* and .theme-toggle-btn styles have been deleted. */
 
 /* --- Base Card Style --- */
 /* This style is shared by results, history page, and the input form */
@@ -340,92 +336,6 @@
   margin: 40px auto;
 }
 
-/* --- Header, Nav, and Theme Toggle --- */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px; /* Reduced margin */
-  gap: 16px;
-  flex-wrap: wrap; 
-}
-
-.main-title {
-  margin: 0;
-  font-size: 2.5rem; 
-  font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  text-align: left;
-  flex-shrink: 0; 
-}
-
-.main-nav {
-  display: flex;
-  gap: 12px;
-  margin-left: auto; 
-  margin-right: auto;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: transparent; /* Changed */
-  border: 1px solid transparent; /* Changed */
-  transition: all 0.2s ease;
-}
-
-.nav-link:hover {
-  color: var(--text-primary);
-  background: var(--surface-color);
-  border-color: var(--surface-border);
-}
-
-/* --- NEW: Active Nav Link Style --- */
-.nav-link-active {
-  color: var(--primary-color);
-  background: var(--surface-color);
-  border-color: var(--surface-border);
-  box-shadow: 0 0 10px var(--primary-glow);
-}
-/* Ensure hover doesn't remove active text color */
-.nav-link-active:hover {
-  color: var(--primary-color);
-}
-
-
-.theme-toggle-btn {
-  background: var(--surface-color);
-  border: 1px solid var(--surface-border);
-  backdrop-filter: blur(var(--surface-blur));
-  color: var(--text-primary);
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0; 
-}
-
-.theme-toggle-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-
 /* --- History Page Specifics --- */
 .history-header {
   display: flex;
@@ -476,27 +386,10 @@
 
 /* --- Responsive adjustments --- */
 @media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    align-items: stretch; 
-    gap: 20px;
-  }
-  .main-title {
-    text-align: center;
-  }
-  .main-nav {
-    margin-left: 0;
-    margin-right: 0;
-    justify-content: center; 
-  }
-  .theme-toggle-btn {
-    position: absolute;
-    top: 28px; /* Adjust to match new padding */
-    right: 20px;
-  }
+  /* Old layout styles removed */
   body {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .input-form,
   .results-card,
@@ -506,17 +399,9 @@
 }
 
 @media (max-width: 480px) {
-  .nav-link span {
-    display: none;
-  }
-  .nav-link {
-    padding: 10px;
-  }
+  /* Old layout styles removed */
   .settings-row {
     grid-template-columns: 1fr; /* Stack settings on mobile */
-  }
-  .main-title {
-    font-size: 2rem;
   }
   .history-section-page .history-header h2 {
     margin: 0;

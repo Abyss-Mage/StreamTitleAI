@@ -54,7 +54,7 @@ body[data-theme="dark"] {
 
 body {
   margin: 0;
-  padding: 40px 20px;
+  /* padding: 40px 20px; <-- THIS WAS REMOVED */
   min-height: 100vh;
   color: var(--text-primary);
   

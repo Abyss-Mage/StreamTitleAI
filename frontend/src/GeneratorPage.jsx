@@ -2,18 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css';
+// --- FIX: Use absolute paths from /src/ ---
+import '/src/App.css';
 import { 
   Search, Copy, Youtube, MessageSquare, Hash, ThumbsUp, 
   Globe, AlignLeft, X, Loader, Monitor, Layers
 } from 'react-feather';
 
 // Firebase Imports
-import { auth, db } from './firebase';
-// --- THIS IS THE FIX ---
-// The import path is "firebase/firestore", not "firebase-firestore"
+import { auth, db } from '/src/firebase'; // --- FIX: Use absolute path
 import { addDoc, collection, serverTimestamp, query, where, getDocs, limit } from "firebase/firestore"; 
-// --- END OF FIX ---
 
 function GeneratorPage() {
   const [gameName, setGameName] = useState('');
@@ -51,7 +49,7 @@ function GeneratorPage() {
     e.preventDefault(); 
     setIsLoading(true);
     setError(null);
-    setResult(null);
+    setResult(null); // Clear previous results
 
     const userPreferences = {
       platform: platform,
@@ -65,7 +63,8 @@ function GeneratorPage() {
         throw new Error("You are not logged in. Please refresh and log in again.");
       }
 
-      const response = await axios.post('/api/generate', 
+      // --- FIX: Added /v1/ to the API path ---
+      const response = await axios.post('/api/v1/generate', 
         {
           gameName: gameName,
           ...userPreferences,
@@ -102,9 +101,12 @@ function GeneratorPage() {
 
     } catch (err) {
       console.error('Error fetching data:', err);
+      // --- FIX: Handle errors more safely ---
+      // Do NOT set result on error, as it will crash the render.
       if (err.response && err.response.status === 404) {
-        setError(`'${gameName}' was not found. Please check the spelling.`);
-        setResult(err.response.data); 
+        // Use the error message from the backend if it exists, otherwise provide a default.
+        const errorMsg = err.response.data?.platformDescription || `The game '${gameName}' was not found. Please check the spelling.`;
+        setError(errorMsg);
       } else if (err.response && (err.response.status === 401 || err.response.status === 403)) {
         setError('Authentication error. Please log out and log back in.');
       } else {
@@ -117,7 +119,7 @@ function GeneratorPage() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!'); 
+    // Use a more subtle notification later, but alert is fine for now
   };
 
   const formatForDisplay = (text) => {
@@ -175,7 +177,7 @@ function GeneratorPage() {
             <select 
               className="settings-select"
               value={descriptionLength}
-              onChange={(e) => setDescriptionLength(e.target.value)} // Corrected: was e.control.value
+              onChange={(e) => setDescriptionLength(e.target.value)} 
             >
               <option value="Short">Short</option>
               <option value="Medium">Medium</option>
@@ -244,8 +246,8 @@ function GeneratorPage() {
                 
                 <strong>Layers (from bottom to top):</strong>
                 <ul className="thumbnail-layers-list">
-                  {result.thumbnail.layers.map((layer) => (
-                    <li key={layer.layer}>
+                  {result.thumbnail.layers.map((layer, index) => (
+                    <li key={index}>
                       <span className="layer-type-tag">{layer.type}</span>
                       <p>{layer.content}</p>
                     </li>

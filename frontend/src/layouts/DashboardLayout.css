@@ -1,0 +1,189 @@
+/* frontend/src/layouts/DashboardLayout.css */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: 260px;
+  background: var(--bg-color-2);
+  border-right: 1px solid var(--surface-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  flex-shrink: 0;
+  transition: width 0.3s ease;
+}
+
+.sidebar-title {
+  margin: 0 0 30px 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 20px;
+  margin-bottom: 5px;
+  padding: 0 12px;
+}
+.nav-section-title:first-child {
+  margin-top: 0;
+}
+
+/* This replaces the old .nav-link styles */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--surface-color);
+}
+
+.nav-link-active {
+  color: var(--primary-color);
+  background: var(--surface-color);
+  font-weight: 600;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.nav-link-active:hover {
+  color: var(--primary-color);
+}
+
+.nav-link span {
+  font-size: 0.95rem;
+}
+
+
+/* --- Sidebar Footer --- */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.control-btn {
+  flex: 1;
+  background: var(--surface-color);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.control-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-color);
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: var(--text-on-primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* --- Main Content Area --- */
+.main-content {
+  flex: 1;
+  overflow-y: auto; /* Allows content to scroll */
+  padding: 40px;
+  max-height: 100vh;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px; /* Collapse sidebar */
+    padding: 20px 10px;
+  }
+  .sidebar-title {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  .sidebar-nav span,
+  .nav-section-title,
+  .user-email {
+    display: none; /* Hide text */
+  }
+  .nav-link {
+    justify-content: center;
+    padding: 12px;
+  }
+  .user-profile {
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+  .sidebar-controls {
+    flex-direction: column;
+  }
+  .main-content {
+    padding: 20px;
+  }
+}
