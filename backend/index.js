@@ -41,7 +41,12 @@ const YOUTUBE_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID;
 const YOUTUBE_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET;
 // This *must* match the "Authorized redirect URIs" in your Google Cloud Console
 // for the OAuth 2.0 Client ID.
-const YOUTUBE_REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:80'; 
+const YOUTUBE_REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI;
+if (!YOUTUBE_REDIRECT_URI) {
+  console.error("CRITICAL ERROR: 'YOUTUBE_REDIRECT_URI' is not set in your .env file.");
+  // This will stop the server if the variable is missing, preventing mismatched errors.
+  throw new Error('YOUTUBE_REDIRECT_URI is not set. Please check your .env file.');
+}
 
 // --- NEW V2: Encryption Config ---
 // **IMPORTANT**: Add a strong, 32-byte (e.g., 64 hex chars) key to your .env
@@ -66,6 +71,43 @@ function decrypt(text) {
   let decrypted = decipher.update(encryptedText);
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();
+}
+
+// --- NEW V2: YouTube OAuth Client Helper ---
+async function getAuthenticatedYouTubeClient(uid) {
+  // 1. Get the user's stored refresh token
+  const tokenRef = db.collection('connections').doc(uid).collection('youtube').doc('tokens');
+  const tokenDoc = await tokenRef.get();
+  
+  if (!tokenDoc.exists) {
+    throw new Error('User has no YouTube connection.');
+  }
+  
+  const encryptedRefreshToken = tokenDoc.data().refreshToken;
+  const refreshToken = decrypt(encryptedRefreshToken);
+
+  // 2. Create an OAuth2 client
+  const oauth2Client = new google.auth.OAuth2(
+    YOUTUBE_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET,
+    YOUTUBE_REDIRECT_URI
+  );
+
+  // 3. Set the refresh token
+  oauth2Client.setCredentials({
+    refresh_token: refreshToken
+  });
+
+  // 4. Get a new access token
+  // This will automatically use the refresh token to get a new access token
+  const { token: newAccessToken } = await oauth2Client.getAccessToken();
+  
+  // 5. Set the new access token on the client
+  oauth2Client.setCredentials({
+    access_token: newAccessToken
+  });
+
+  return oauth2Client;
 }
 
 // --- V2: API JWT Verification Middleware ---
@@ -268,6 +310,54 @@ app.get('/api/v1/connections', verifyApiToken, async (req, res) => {
   } catch (error) {
     console.error("Error fetching connections:", error);
     res.status(500).send('Failed to fetch connection status.');
+  }
+});
+
+// --- NEW V2: Get YouTube Analytics ---
+app.get('/api/v1/youtube/analytics', verifyApiToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    // 1. Get the authenticated client
+    const oauth2Client = await getAuthenticatedYouTubeClient(uid);
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+
+    // 2. Get Channel Info (to find the 'uploads' playlist ID)
+    const channelResponse = await youtube.channels.list({
+      part: 'contentDetails,snippet', // Add snippet to get title
+      mine: true,
+    });
+
+    if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
+      return res.status(404).send('YouTube channel not found.');
+    }
+    
+    const channelData = channelResponse.data.items[0];
+    const channelTitle = channelData.snippet.title;
+    
+    // 3. Call the YouTube Analytics API
+    const analytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
+    
+    // Get stats for the last 30 days
+    const endDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days ago
+
+    const analyticsResponse = await analytics.reports.query({
+      ids: `channel==${channelData.id}`,
+      startDate: startDate,
+      endDate: endDate,
+      metrics: 'views,subscribersGained,subscribersLost',
+    });
+
+    res.json({
+      success: true,
+      channelTitle: channelTitle,
+      analytics: analyticsResponse.data,
+    });
+
+  } catch (error) {
+    console.error("[StreamTitle.AI] Error fetching YouTube analytics:", error.message);
+    res.status(500).send('Failed to fetch YouTube analytics.');
   }
 });
 

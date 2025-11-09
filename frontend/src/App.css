@@ -718,3 +718,31 @@
   transform: scale(1.03);
   box-shadow: 0 4px 15px var(--primary-glow);
 }
+
+/* --- ADD THIS NEW CSS --- */
+.analytics-section {
+  background: var(--bg-input);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  margin-top: -8px;
+}
+
+.analytics-results {
+  margin-top: 15px;
+}
+
+.analytics-results h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-primary);
+}
+
+.analytics-results p {
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+
+.analytics-results strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

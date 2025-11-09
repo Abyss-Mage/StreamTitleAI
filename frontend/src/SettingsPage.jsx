@@ -67,6 +67,12 @@ function SettingsPage() {
   const [connections, setConnections] = useState(null);
   const [isConnectionsLoading, setIsConnectionsLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(null);
+
+  // --- ADD THESE NEW STATES ---
+  const [analytics, setAnalytics] = useState(null);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
+  // --- END ---
   
   // --- NEW: Google OAuth Client ---
   const [googleCodeClient, setGoogleCodeClient] = useState(null);
@@ -179,6 +185,35 @@ function SettingsPage() {
       setIsConnectionsLoading(false);
     }
   };
+
+  // --- NEW: Handle Fetch Analytics Button Click ---
+  const handleFetchAnalytics = async () => {
+    setIsAnalyticsLoading(true);
+    setAnalyticsError(null);
+    setAnalytics(null);
+
+    try {
+      const token = localStorage.getItem('apiToken');
+      const response = await axios.get('/api/v1/youtube/analytics', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const data = response.data.analytics;
+      const result = {
+        channelTitle: response.data.channelTitle,
+        views: data.rows[0][0],
+        subscribersGained: data.rows[0][1],
+        subscribersLost: data.rows[0][2],
+      };
+      setAnalytics(result);
+      
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+      setAnalyticsError("Failed to fetch analytics. Please try again.");
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  };
   
   // --- (Profile change and save handlers are unchanged) ---
   const handleProfileChange = (e) => {
@@ -237,11 +272,37 @@ function SettingsPage() {
               status={connections?.youtube} 
               onConnect={handleConnectYouTube}
             />
+
+            {/* --- ADD THIS SECTION --- */}
+            {connections?.youtube.connected && (
+              <div className="analytics-section">
+                <button 
+                  className="connect-btn" 
+                  onClick={handleFetchAnalytics} 
+                  disabled={isAnalyticsLoading}
+                  style={{background: 'var(--bg-tag)', color: 'var(--text-primary)'}}
+                >
+                  {isAnalyticsLoading ? <Loader size={16} className="spinner" /> : 'Fetch Last 30d Analytics'}
+                </button>
+
+                {analyticsError && <div className="error-message" style={{marginTop: '15px'}}>{analyticsError}</div>}
+                
+                {analytics && (
+                  <div className="analytics-results">
+                    <h4>Analytics for: {analytics.channelTitle}</h4>
+                    <p>Views: <strong>{analytics.views}</strong></p>
+                    <p>New Subs: <strong>{analytics.subscribersGained}</strong></p>
+                    <p>Subs Lost: <strong>{analytics.subscribersLost}</strong></p>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* --- END OF SECTION --- */}
             
             <ConnectionStatus 
               service="twitch" 
               status={connections?.twitch} 
-              onConnect={() => alert('Twitch connection coming in the next step!')}
+              onConnect={() => alert('Twitch connection coming soon!')}
             />
           </div>
         )}
