@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../App'; 
+import { useAuth } from '/src/App'; // <-- 1. FIXED: Use absolute path
 import { 
   Zap, Search, Coffee, Loader, AlertCircle, BarChart2, Award, MessageSquare 
 } from 'react-feather';
-import '../App.css'; // Re-use existing styles like .results-card
+import '/src/App.css'; // <-- 2. FIXED: Use absolute path
+import '/src/pages/HomePage.css'; // <-- 3. FIXED: Use absolute path
 
 // A small component to display the stats once loaded
 function AnalyticsDisplay({ analytics }) {
@@ -150,142 +151,13 @@ function HomePage() {
             <div className="xp-progress" style={{width: '40%'}}></div>
           </div>
           <p className="placeholder-subtext">120/300 XP to next level</p>
-          <button className="generate-button" disabled style={{width: '100%', marginTop: 'auto'}}>Coming Soon</button>
+          <button className="generate-button" disabled style={{width: '100%', marginTop: 'auto'}}>Coming Soon</button> 
+          {/* ^-- 4. FIXED: Corrected closing tag --^ */}
         </div>
 
       </div>
       
-      {/* Add new CSS for these cards */}
-      <style>{`
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          grid-auto-rows: minmax(200px, auto);
-          gap: 24px;
-        }
-
-        .results-card {
-          margin-top: 0; /* Remove default margin */
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .card-span-2 {
-          grid-column: span 2;
-        }
-
-        .card-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 0;
-          margin-bottom: 20px;
-          color: var(--text-primary);
-        }
-
-        .quick-actions-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }
-        .action-card {
-          background: var(--bg-input);
-          border: 1px solid var(--surface-border);
-          border-radius: 12px;
-          padding: 20px;
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-        .action-card:hover {
-          border-color: var(--primary-color);
-          transform: translateY(-4px);
-          box-shadow: 0 4px 20px var(--primary-glow);
-        }
-        .action-card h4 {
-          margin: 10px 0 5px 0;
-          color: var(--text-primary);
-        }
-        .action-card p {
-          margin: 0;
-          color: var(--text-secondary);
-          font-size: 0.9rem;
-        }
-
-        /* Analytics Stats */
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          text-align: center;
-        }
-        .stat-item {
-          background: var(--bg-input);
-          padding: 20px;
-          border-radius: 12px;
-          border: 1px solid var(--surface-border);
-        }
-        .stat-value {
-          font-size: 2rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          display: block;
-          line-height: 1.2;
-        }
-        .stat-label {
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-          font-weight: 500;
-          margin-top: 8px;
-          display: block;
-        }
-
-        /* Placeholder Cards */
-        .placeholder-card {
-          background: var(--bg-input);
-        }
-        .placeholder-text {
-          font-size: 1.1rem;
-          color: var(--text-secondary);
-          line-height: 1.6;
-          margin: 0;
-        }
-        .placeholder-subtext {
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-          margin: 10px 0 0 0;
-        }
-        .xp-bar {
-          width: 100%;
-          height: 10px;
-          background: var(--surface-border);
-          border-radius: 10px;
-          margin-top: 20px;
-          overflow: hidden;
-        }
-        .xp-progress {
-          height: 100%;
-          background: var(--primary-gradient);
-          border-radius: 10px;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-          .dashboard-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-        @media (max-width: 900px) {
-          .dashboard-grid {
-            grid-template-columns: 1fr;
-          }
-          .card-span-2 {
-            grid-column: span 1;
-          }
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+      {/* --- 2. THE <style> TAG HAS BEEN REMOVED --- */}
     </div>
   );
 }

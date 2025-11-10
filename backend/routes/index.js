@@ -8,6 +8,7 @@ const authRoutes = require('./auth');
 const profileRoutes = require('./profile');
 const youtubeRoutes = require('./youtube');
 const generateRoutes = require('./generate');
+const aiRoutes = require('./ai'); // <-- 1. IMPORT THE AI ROUTER
 
 // --- Public Routes ---
 // Auth routes are public (for login/token exchange)
@@ -20,6 +21,7 @@ router.use(verifyApiToken);
 router.use('/profile', profileRoutes);
 router.use('/youtube', youtubeRoutes);
 router.use('/generate', generateRoutes); // This will mount POST / as /api/v1/generate
+router.use('/ai', aiRoutes); // <-- 2. MOUNT THE AI ROUTER
 
 // A simple test route for protected access
 router.get('/test', (req, res) => {

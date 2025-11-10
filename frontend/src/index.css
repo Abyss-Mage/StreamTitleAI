@@ -54,7 +54,6 @@ body[data-theme="dark"] {
 
 body {
   margin: 0;
-  /* padding: 40px 20px; <-- THIS WAS REMOVED */
   min-height: 100vh;
   color: var(--text-primary);
   
@@ -63,8 +62,10 @@ body {
     radial-gradient(at 20% 20%, hsla(var(--primary-hue), 100%, 70%, 0.15) 0px, transparent 50%),
     radial-gradient(at 80% 80%, hsla(280, 100%, 70%, 0.15) 0px, transparent 50%);
   
-  display: flex;
-  justify-content: center;
+  /* THE FIX: 
+    The 'display: flex' and 'justify-content: center' lines below 
+    were removed. They were breaking the new dashboard layout.
+  */
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   font-weight: 400;

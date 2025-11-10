@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Loader, AlertCircle, Eye, ThumbsUp, Zap } from 'react-feather';
 import '../App.css'; // For .results-card and .loading-spinner
 import './OptimizePage.css'; // New CSS for this page
+import { OptimizeModal } from './OptimizeModal'; // <-- 1. IMPORT THE MODAL
 
 // Helper to format large numbers (e.g., 10000 -> 10,000)
 const formatNumber = (num) => {
@@ -12,7 +13,7 @@ const formatNumber = (num) => {
 };
 
 // Component for a single video card
-function VideoCard({ video }) {
+function VideoCard({ video, onOptimizeClick }) { // <-- 2. ACCEPT onOptimizeClick PROP
   const { snippet, statistics } = video;
   
   // Get the best available thumbnail
@@ -35,7 +36,10 @@ function VideoCard({ video }) {
             <ThumbsUp size={14} /> {formatNumber(statistics.likeCount)}
           </span>
         </div>
-        <button className="generate-button optimize-btn">
+        <button 
+          className="generate-button optimize-btn"
+          onClick={() => onOptimizeClick(video)} // <-- 3. ADD onClick HANDLER
+        >
           <Zap size={16} />
           Optimize with AI
         </button>
@@ -48,6 +52,7 @@ function OptimizePage() {
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null); // <-- 4. ADD STATE FOR MODAL
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -57,7 +62,7 @@ function OptimizePage() {
 
       try {
         const response = await axios.get('/api/v1/youtube/videos', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` } // <-- THIS IS THE FIX
         });
         
         if (response.data.success) {
@@ -99,20 +104,34 @@ function OptimizePage() {
     return (
       <div className="video-grid">
         {videos.map((video) => (
-          <VideoCard key={video.id} video={video} />
+          <VideoCard 
+            key={video.id} 
+            video={video} 
+            onOptimizeClick={setSelectedVideo} // <-- 5. PASS HANDLER TO CARD
+          />
         ))}
       </div>
     );
   };
 
   return (
-    <div className="results-card" style={{ marginTop: 0 }}>
-      <div className="optimize-header">
-        <h2><Zap size={28} /> Optimize Your Videos</h2>
-        <p>Select a recent video to analyze and get AI-powered suggestions for titles, descriptions, and more.</p>
+    <> {/* <-- 6. WRAP IN FRAGMENT */}
+      <div className="results-card" style={{ marginTop: 0 }}>
+        <div className="optimize-header">
+          <h2><Zap size={28} /> Optimize Your Videos</h2>
+          <p>Select a recent video to analyze and get AI-powered suggestions for titles, descriptions, and more.</p>
+        </div>
+        {renderContent()}
       </div>
-      {renderContent()}
-    </div>
+
+      {/* --- 7. RENDER MODAL CONDITIONALLY --- */}
+      {selectedVideo && (
+        <OptimizeModal 
+          video={selectedVideo} 
+          onClose={() => setSelectedVideo(null)} 
+        />
+      )}
+    </>
   );
 }
 

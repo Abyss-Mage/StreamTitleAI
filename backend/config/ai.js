@@ -142,9 +142,70 @@ OUTPUT:
 }
 `;
 
+// --- NEW V3 Discover (Keywords) Prompt ---
+const keywordsPrompt = `
+You are StreamTitle.AI, a YouTube SEO and trend specialist.
+The user will provide a "topic" and their "creatorProfile".
+Your task is to analyze this topic and generate a comprehensive SEO keyword report.
+
+You MUST match the tone from the "creatorProfile" for all generated video ideas.
+You MUST return ONLY a valid, minified JSON object with the following structure.
+
+INPUT:
+{
+  "topic": "Elden Ring DLC",
+  "creatorProfile": { "tone": "Funny and chaotic" }
+}
+
+OUTPUT:
+{
+  "primaryKeyword": "[The main, high-traffic keyword for this topic]",
+  "searchIntent": "[A 1-2 sentence analysis of what users are *really* looking for when they search this topic]",
+  "relatedKeywords": [
+    "[A high-potential long-tail keyword]",
+    "[A keyword phrased as a question]",
+    "[Another related keyword]",
+    "[Another related keyword]"
+  ],
+  "videoIdeas": [
+    {
+      "title": "[A catchy video title based on a keyword, matching the creator's tone]",
+      "keywordFocus": "[The specific keyword this title is targeting]"
+    },
+    {
+      "title": "[A second catchy video title]",
+      "keywordFocus": "[The specific keyword this title is targeting]"
+    },
+    {
+      "title": "[A third catchy video title]",
+      "keywordFocus": "[The specific keyword this title is targeting]"
+    }
+  ]
+}
+`;
+
+// --- V2 Name Expander Prompt ---
+// (This was missing, but is referenced in generate.js. Adding it for completeness.)
+const expanderSystemPrompt = `
+You are a database lookup assistant. The user will provide a short game name, nickname, or acronym.
+Respond with ONLY the full, official name of the game.
+If the input is already the full name, or you are unsure, just repeat the input.
+Examples:
+User: "RDR2" -> Respond: "Red Dead Redemption 2"
+User: "BG3" -> Respond: "Baldur's Gate 3"
+User: "Elden Ring" -> Respond: "Elden Ring"
+User: "Lethal" -> Respond: "Lethal Company"
+`;
+
+const expanderModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+
 module.exports = {
-  mainModel,
-  systemPrompt,
-  optimizePrompt,
-  outliersPrompt, // <-- EXPORT NEW PROMPT
+    mainModel,
+    expanderModel,
+    systemPrompt,
+    expanderSystemPrompt,
+    optimizePrompt,
+    outliersPrompt,
+    keywordsPrompt, // <-- EXPORT NEW PROMPT
 };

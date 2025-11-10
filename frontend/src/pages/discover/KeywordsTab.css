@@ -1,0 +1,99 @@
+/* frontend/src/pages/discover/KeywordsTab.css */
+
+.keyword-results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    gap: 24px;
+}
+
+.keyword-card {
+    background: var(--bg-input);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+.keyword-details-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px; /* Space between cards in the column */
+}
+
+.keyword-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--surface-border);
+    padding-bottom: 12px;
+}
+.keyword-card-header svg {
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+.keyword-card-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.primary-keyword-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.intent-text {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.video-ideas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.video-idea-item {
+    border-bottom: 1px solid var(--surface-border);
+    padding-bottom: 20px;
+}
+.video-idea-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.video-idea-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin: 0 0 8px 0;
+}
+
+.video-idea-focus {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: var(--bg-tag);
+    border: 1px solid var(--surface-border);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+.video-idea-focus strong {
+    color: var(--text-primary);
+}
+
+
+/* Responsive */
+@media (max-width: 900px) {
+    .keyword-results-grid {
+        grid-template-columns: 1fr; /* Stack to one column on mobile */
+    }
+}

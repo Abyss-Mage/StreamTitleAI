@@ -84,11 +84,16 @@
   outline: none;
 }
 
-/* Settings Dropdowns */
+/* --- NEW RESPONSIVE SETTINGS ROW --- */
 .settings-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 16px;
+  
+  /* This creates a responsive grid:
+    - Default (e.g., 4 items): 4 columns
+    - Falls back to 2 columns, then 1 column
+  */
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .settings-select {
@@ -384,9 +389,15 @@
   padding: 15px;
 }
 
-/* --- Responsive adjustments --- */
+/* --- NEW RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 1200px) {
+  /* On medium-large screens, stack to 2 columns */
+  .settings-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  /* Old layout styles removed */
   body {
     padding-top: 0;
     padding-bottom: 0;
@@ -396,12 +407,17 @@
   .history-section-page {
     padding: 20px;
   }
+  
+  /* On tablets/small-laptops, stack to 2 columns */
+  .settings-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media (max-width: 480px) {
-  /* Old layout styles removed */
+@media (max-width: 600px) {
+  /* On mobile, stack to 1 column */
   .settings-row {
-    grid-template-columns: 1fr; /* Stack settings on mobile */
+    grid-template-columns: 1fr;
   }
   .history-section-page .history-header h2 {
     margin: 0;
