@@ -153,6 +153,7 @@
   overflow-y: auto; /* Allows content to scroll */
   padding: 40px;
   max-height: 100vh;
+  min-width: 0; /* <-- THIS IS THE RESPONSIVE FIX */
 }
 
 /* --- Responsive --- */

@@ -10,12 +10,7 @@ const {
   expanderSystemPrompt
 } = require('../config/ai');
 
-// --- API Keys & Config ---
-const steamApiKey = process.env.STEAM_API_KEY; 
-const curseforgeApiKey = process.env.CURSEFORGE_API_KEY;
-const MINECRAFT_GAME_ID = 432;
-
-// --- Error Function (Helper) ---
+// ... (Error Function and API Configs are unchanged) ...
 function createErrorResponse(inputName, message, originalQuery, prefs) {
     return {
         game: "Invalid Input",
@@ -38,6 +33,7 @@ function createErrorResponse(inputName, message, originalQuery, prefs) {
     };
 }
 
+
 // --- V2: Generation API Endpoint ---
 // POST /api/v1/generate
 router.post('/', async (req, res) => {
@@ -47,7 +43,8 @@ router.post('/', async (req, res) => {
           gameName, 
           platform = 'YouTube', 
           language = 'English', 
-          descriptionLength = 'Medium'
+          descriptionLength = 'Medium',
+          profileId // <-- NEW: Get the profileId from the request
         } = req.body;
         
         const uid = req.user.uid; 
@@ -60,22 +57,30 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Game name is required' });
         }
 
-        // --- 3. Fetch Creator Profile ---
+        // --- 3. Fetch Creator Profile (NEW LOGIC) ---
         let creatorProfile = {};
-        try {
-          const profileRef = db.collection('creatorProfiles').doc(uid);
-          const doc = await profileRef.get();
-          if (doc.exists) {
-            creatorProfile = doc.data();
-          } else {
-            console.log(`[StreamTitle.AI] No profile found for user ${uid}, using defaults.`);
+        if (profileId) {
+          try {
+            // Fetch the specific profile from the subcollection
+            const profileRef = db.collection('creatorProfiles').doc(uid).collection('profiles').doc(profileId);
+            const doc = await profileRef.get();
+            if (doc.exists) {
+              console.log(`[StreamTitle.AI] Using profile: ${doc.data().name || profileId}`);
+              creatorProfile = doc.data();
+            } else {
+              console.log(`[StreamTitle.AI] Profile ${profileId} not found, using defaults.`);
+            }
+          } catch (profileError) {
+            console.error('[StreamTitle.AI] Error fetching specific profile, proceeding without it:', profileError);
           }
-        } catch (profileError) {
-          console.error('[StreamTitle.AI] Error fetching profile, proceeding without it:', profileError);
+        } else {
+            console.log(`[StreamTitle.AI] No profileId provided, using defaults.`);
         }
+        // --- END OF NEW LOGIC ---
 
         // --- Name Expansion ---
         let officialGameName = gameName;
+        // ... (rest of the function is unchanged) ...
         try {
             console.log(`[StreamTitle.AI] Expanding short form: "${gameName}"`);
             const chat = expanderModel.startChat({
