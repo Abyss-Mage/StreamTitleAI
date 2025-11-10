@@ -1,0 +1,125 @@
+/* frontend/src/pages/discover/CompetitorsTab.css */
+
+.competitor-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.competitor-card {
+  background: var(--bg-input);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.competitor-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.competitor-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 12px;
+}
+.competitor-card-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+.competitor-card-header svg {
+  color: var(--primary-color);
+}
+
+.competitor-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin: 16px 0 8px 0;
+}
+.competitor-label:first-of-type {
+  margin-top: 0;
+}
+
+.competitor-text {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.gaps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gap-item {
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 16px;
+}
+.gap-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.gap-item p {
+  margin: 0;
+  line-height: 1.6;
+}
+.gap-item .gap-title {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.gap-item .gap-opportunity {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Video Ideas (re-using from KeywordsTab) */
+.video-ideas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.video-idea-item {
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 16px;
+}
+.video-idea-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.video-idea-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+.video-idea-focus {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.video-idea-focus strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .competitor-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 768px) {
+  .competitors-tab .input-form {
+    grid-template-columns: 1fr;
+  }
+  .competitors-tab .input-form .select-wrapper {
+    min-width: 100%;
+  }
+}

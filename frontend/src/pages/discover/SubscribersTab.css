@@ -1,0 +1,23 @@
+/* frontend/src/pages/discover/SubscribersTab.css */
+
+.custom-tooltip {
+  background: var(--surface-color);
+  backdrop-filter: blur(var(--surface-blur));
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 5px 0;
+}
+
+.tooltip-net {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin: 0;
+}

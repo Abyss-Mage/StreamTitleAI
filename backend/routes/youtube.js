@@ -5,9 +5,7 @@ const { db } = require('../config/firebase');
 const { getAuthenticatedYouTubeClient, google } = require('../utils/youtube');
 
 // --- Channel Connection Endpoints ---
-
 // GET /api/v1/youtube/connections
-// Note: We'll make this route /connections and mount it at /youtube
 router.get('/connections', async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -39,7 +37,7 @@ router.get('/connections', async (req, res) => {
   }
 });
 
-// --- YouTube Analytics ---
+// --- YouTube Analytics (Totals) ---
 // GET /api/v1/youtube/analytics
 router.get('/analytics', async (req, res) => {
   try {
@@ -62,14 +60,14 @@ router.get('/analytics', async (req, res) => {
     const channelData = channelResponse.data.items[0];
     const channelTitle = channelData.snippet.title;
     
-    // 3. Call the YouTube Analytics API
+    // 3. Call the YouTube Analytics API (Totals for last 30 days)
     const analytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
     
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const analyticsResponse = await analytics.reports.query({
-      ids: `channel==${channelData.id}`,
+      ids: 'channel==MINE', // Use "MINE" for the authenticated user
       startDate: startDate,
       endDate: endDate,
       metrics: 'views,subscribersGained,subscribersLost',
@@ -86,6 +84,61 @@ router.get('/analytics', async (req, res) => {
     res.status(500).send('Failed to fetch YouTube analytics.');
   }
 });
+
+
+// --- NEW: YouTube Analytics (Daily Growth) ---
+// GET /api/v1/youtube/analytics/growth
+router.get('/analytics/growth', async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    
+    // 1. Get the authenticated client
+    const oauth2Client = await getAuthenticatedYouTubeClient(uid);
+    
+    // 2. Call the YouTube Analytics API
+    const analytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
+    
+    const endDate = new Date().toISOString().split('T')[0];
+    // Get data for the last 30 days
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const analyticsResponse = await analytics.reports.query({
+      ids: 'channel==MINE',
+      startDate: startDate,
+      endDate: endDate,
+      metrics: 'subscribersGained,subscribersLost',
+      dimensions: 'day', // This is the key change to get time-series data
+      sort: 'day', // Sort by day
+    });
+
+    // 3. Format the data for recharts
+    const growthData = analyticsResponse.data.rows.map(row => {
+      const [day, gained, lost] = row;
+      const netChange = parseInt(gained) - parseInt(lost);
+      
+      // Format day from "YYYY-MM-DD" to "MM-DD" for cleaner chart labels
+      const [year, month, date] = day.split('-');
+      const formattedDay = `${month}-${date}`;
+
+      return {
+        day: formattedDay,
+        Gained: parseInt(gained),
+        Lost: parseInt(lost),
+        Net: netChange
+      };
+    });
+
+    res.json({
+      success: true,
+      growthData: growthData,
+    });
+
+  } catch (error) {
+    console.error("[StreamTitle.AI] Error fetching YouTube growth analytics:", error.message);
+    res.status(500).send('Failed to fetch YouTube growth analytics.');
+  }
+});
+
 
 // --- Get YouTube Videos List ---
 // GET /api/v1/youtube/videos

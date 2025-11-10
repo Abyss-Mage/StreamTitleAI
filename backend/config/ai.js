@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // Initialize AI Client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const mainModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const mainModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Use 1.5 Flash
 
 // --- V2 Core Generation Prompt (The "Brain") ---
 const systemPrompt = `
@@ -95,7 +95,7 @@ OUTPUT:
 }
 `;
 
-// --- NEW V3 Discover (Outliers) Prompt ---
+// --- V3 Discover (Outliers) Prompt ---
 const outliersPrompt = `
 You are StreamTitle.AI, a YouTube trend analyst. The user will provide a topic or game name.
 Your task is to act as a creative strategist and identify 5 "Outlier" video ideas.
@@ -118,21 +118,7 @@ OUTPUT:
       "concept": "[A 1-2 sentence description of the video concept, explaining WHY it's a good idea or a unique angle.]",
       "hook": "[A 1-sentence "hook" the creator could use in the first 10 seconds of the video.]"
     },
-    {
-      "title": "[A catchy, "outlier" video title]",
-      "concept": "[A 1-2 sentence description of the video concept, explaining WHY it's a good idea or a unique angle.]",
-      "hook": "[A 1-sentence "hook" the creator could use in the first 10 seconds of the video.]"
-    },
-    {
-      "title": "[A catchy, "outlier" video title]",
-      "concept": "[A 1-2 sentence description of the video concept, explaining WHY it's a good idea or a unique angle.]",
-      "hook": "[A 1-sentence "hook" the creator could use in the first 10 seconds of the video.]"
-    },
-    {
-      "title": "[A catchy, "outlier" video title]",
-      "concept": "[A 1-2 sentence description of the video concept, explaining WHY it's a good idea or a unique angle.]",
-      "hook": "[A 1-sentence "hook" the creator could use in the first 10 seconds of the video.]"
-    },
+    // ... (5 ideas total) ...
     {
       "title": "[A catchy, "outlier" video title]",
       "concept": "[A 1-2 sentence description of the video concept, explaining WHY it's a good idea or a unique angle.]",
@@ -142,70 +128,90 @@ OUTPUT:
 }
 `;
 
-// --- NEW V3 Discover (Keywords) Prompt ---
+// --- V3 Discover (Keywords) Prompt ---
 const keywordsPrompt = `
-You are StreamTitle.AI, a YouTube SEO and trend specialist.
-The user will provide a "topic" and their "creatorProfile".
-Your task is to analyze this topic and generate a comprehensive SEO keyword report.
+You are StreamTitle.AI, a YouTube SEO expert. The user will provide a topic or game name.
+Your task is to analyze this topic and generate a detailed SEO and content plan.
 
-You MUST match the tone from the "creatorProfile" for all generated video ideas.
+You MUST use the "creatorProfile" to tailor your 'videoIdeas' to the user's 'tone'.
 You MUST return ONLY a valid, minified JSON object with the following structure.
 
 INPUT:
 {
   "topic": "Elden Ring DLC",
-  "creatorProfile": { "tone": "Funny and chaotic" }
+  "creatorProfile": { "tone": "Informative and thorough", "bannedWords": ["easy"] }
 }
 
 OUTPUT:
 {
-  "primaryKeyword": "[The main, high-traffic keyword for this topic]",
-  "searchIntent": "[A 1-2 sentence analysis of what users are *really* looking for when they search this topic]",
+  "primaryKeyword": "[The most important keyword for this topic]",
+  "searchIntent": "[A 1-sentence analysis of WHAT users are looking for (e.g., guides, reviews, entertainment).]",
   "relatedKeywords": [
     "[A high-potential long-tail keyword]",
-    "[A keyword phrased as a question]",
-    "[Another related keyword]",
-    "[Another related keyword]"
+    "[A related question-based keyword (e.g., 'how to...')]",
+    "[A keyword for a specific sub-topic]"
   ],
   "videoIdeas": [
     {
-      "title": "[A catchy video title based on a keyword, matching the creator's tone]",
-      "keywordFocus": "[The specific keyword this title is targeting]"
+      "title": "[A video title that targets a specific keyword, matching the creator's 'tone']",
+      "keywordFocus": "[The specific keyword this title targets]"
     },
     {
-      "title": "[A second catchy video title]",
-      "keywordFocus": "[The specific keyword this title is targeting]"
-    },
-    {
-      "title": "[A third catchy video title]",
-      "keywordFocus": "[The specific keyword this title is targeting]"
+      "title": "[A second video title, matching the creator's 'tone']",
+      "keywordFocus": "[A different keyword this title targets]"
     }
   ]
 }
 `;
 
-// --- V2 Name Expander Prompt ---
-// (This was missing, but is referenced in generate.js. Adding it for completeness.)
-const expanderSystemPrompt = `
-You are a database lookup assistant. The user will provide a short game name, nickname, or acronym.
-Respond with ONLY the full, official name of the game.
-If the input is already the full name, or you are unsure, just repeat the input.
-Examples:
-User: "RDR2" -> Respond: "Red Dead Redemption 2"
-User: "BG3" -> Respond: "Baldur's Gate 3"
-User: "Elden Ring" -> Respond: "Elden Ring"
-User: "Lethal" -> Respond: "Lethal Company"
+// --- NEW: V3 Discover (Competitor) Prompt ---
+const competitorPrompt = `
+You are StreamTitle.AI, a YouTube competitive strategist. The user will provide a "competitorTopic" (like a channel name or a niche) and their "creatorProfile".
+Your task is to analyze the competitor's strategy and identify "Content Gaps" and "Unique Angles" for the user.
+
+You MUST use the "creatorProfile" (tone, voice, etc.) to create a unique strategy for the USER, not just copy the competitor.
+You MUST return ONLY a valid, minified JSON object with the following structure.
+
+INPUT:
+{
+  "competitorTopic": "MrBeast",
+  "creatorProfile": { "tone": "Small, community-focused, and personal", "bannedWords": ["clickbait"] }
+}
+
+OUTPUT:
+{
+  "competitorAnalysis": {
+    "assumedStrategy": "[A 1-2 sentence analysis of the competitor's likely strategy (e.g., 'High-budget, broad-appeal spectacles')]",
+    "whatWorks": "[A 1-sentence summary of what makes them successful (e.g., 'Fast-paced editing, simple concepts')]"
+  },
+  "contentGaps": [
+    {
+      "gap": "[A 1-sentence description of a topic the competitor is MISSING (e.g., 'Behind-the-scenes build-up')]",
+      "opportunity": "[A 1-sentence explanation of how the USER can fill this gap (e.g., 'You can show the personal journey, which they don't')]"
+    },
+    {
+      "gap": "[A second topic the competitor is missing]",
+      "opportunity": "[How the USER can fill this gap]"
+    }
+  ],
+  "videoIdeas": [
+    {
+      "title": "[A video title that attacks a content gap, matching the USER'S 'tone']",
+      "strategy": "[The specific strategy this video uses (e.g., 'Answers a question they ignore')]"
+    },
+    {
+      "title": "[A second video title, matching the USER'S 'tone']",
+      "strategy": "[A different strategy (e.g., 'Takes their format but with a personal twist')]"
+    }
+  ]
+}
 `;
 
-const expanderModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-
 module.exports = {
-    mainModel,
-    expanderModel,
-    systemPrompt,
-    expanderSystemPrompt,
-    optimizePrompt,
-    outliersPrompt,
-    keywordsPrompt, // <-- EXPORT NEW PROMPT
+  mainModel,
+  systemPrompt,
+  optimizePrompt,
+  outliersPrompt,
+  keywordsPrompt,
+  competitorPrompt, // <-- EXPORT NEW PROMPT
 };
