@@ -13,7 +13,7 @@ export default defineConfig({
     proxy: {
       // Proxies any request starting with /api to the backend
       '/api': {
-        target: 'https://backend.streamtitle.abyssmage.fun/', // Your backend server address
+        target: 'http://localhost:3001', // Your backend server address
         changeOrigin: true, // Recommended
         secure: false, // Set to false for http
       }
