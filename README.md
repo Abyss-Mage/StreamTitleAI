@@ -1,359 +1,284 @@
-# 🧠 StreamTitle.AI — Developer Documentation  
-**Version:** 2.5 → 3.0 (Development Roadmap)  
-**Maintained by:** SafeHouse Studios (Lead Dev: Abyss Mage)  
-**Status:** Actively in development  
-**License:** Private — Internal Use Only  
+# 🧠 StreamTitle.AI
 
----
+**Version:** 3.0 (V4 Roadmap Planning)
+**Status:** Actively in Development
 
 ## 📘 Overview
 
-**StreamTitle.AI** is a full-stack AI-driven application designed to empower YouTube and content creators.  
-It automatically generates SEO-optimized **titles**, **descriptions**, **thumbnails**, and **video scripts** while integrating with **real YouTube analytics** for personalized AI recommendations.  
+**StreamTitle.AI** is a full-stack, AI-driven application designed to empower content creators across **YouTube, Twitch, and Kick**.
 
-Built with **React (Vite)**, **Node.js (Express)**, **Firebase**, and **Gemini AI**, the platform has evolved from a simple MVP into a secure and data-connected ecosystem.
+Built with **React**, **Node.js**, **Firebase**, and **Gemini 2.5**, the platform has evolved from a simple generator into a secure, data-connected ecosystem. It provides AI-powered tools for SEO, content generation, and analytics, allowing creators to optimize their content, discover new trends, and analyze their performance.
 
----
+### 🚀 Core Differentiators
+
+While our primary competitor (VidIq) focuses only on YouTube, StreamTitle.AI is being built for the modern, multi-platform creator.
+
+1.  **Multi-Platform Support:** All AI tools are being designed from the ground up to support **YouTube, Twitch, and Kick**, allowing creators to manage their entire content strategy from one dashboard.
+2.  **Predictive & Niche Analytics:** By integrating a universal game database (V4 goal) instead of just Steam, our AI can track pre-release hype, find low-competition indie games, and identify cross-platform content gaps.
+3.  **True AI Personalization:** The "Creator Profile" system ensures every AI-generated title, description, and idea is perfectly matched to the user's unique brand, tone, and voice.
+4.  **Automated Growth Loop:** Our V4 roadmap includes a self-learning AI that fine-tunes itself on each creator's *actual channel performance* (CTR, retention) to provide suggestions that are proven to work for *their* specific audience.
+
+-----
 
 ## 🧩 Tech Stack Summary
 
-### 🖥️ Frontend (Client-Side)
-| Component | Description |
-|------------|--------------|
-| **Framework** | React v19 + Vite |
-| **Routing** | React Router v6 |
-| **HTTP Client** | Axios |
-| **State Management** | Context API + Local Storage |
-| **Auth & Database** | Firebase SDK (Auth, Firestore, Storage) |
-| **Icons & Styling** | React Feather + TailwindCSS (Dark + Glassmorphism) |
-
-### ⚙️ Backend (Server-Side)
-| Component | Description |
-|------------|--------------|
-| **Framework** | Node.js + Express |
-| **Auth System** | Firebase Admin SDK + JWT “Two-Token” System |
-| **Security** | AES-256 Crypto (YouTube token encryption) |
-| **Env Management** | dotenv |
+| Component | Technology |
+| :--- | :--- |
+| **Frontend** | React 19 + Vite, React Router, Axios, Recharts |
+| **Backend** | Node.js + Express |
 | **AI Engine** | Google Gemini 2.5 Flash |
-| **Video APIs** | YouTube Data API v3 + Analytics API v2 |
-| **Game APIs** | Steam, Modrinth, CurseForge |
+| **Database** | Firebase Firestore & Firebase Storage |
+| **Authentication** | Firebase Auth (Email, Google) + Custom JWTs |
+| **External APIs** | Google (YouTube Data, YouTube Analytics) |
+| **Security** | AES-256 Token Encryption |
 
-### 🗄️ Database & Storage
-| Service | Usage |
-|----------|--------|
-| **Firestore** | User profiles, connections, generation history |
-| **Firebase Storage** | Logos, Thumbnails, AI image outputs |
+-----
 
----
+## 🏗️ Architecture
 
-## 🧱 Architecture Overview
+### Secure Authentication Flow (Two-Token System)
 
-```plaintext
-Frontend (React + Firebase)
-│
-├── Firebase Authentication
-│      └── User signs in (Email/Google)
-│      └── ID Token sent to backend
-│
-├── Axios HTTP Layer
-│      └── Includes API JWT (Two-Token system)
-│
-└── Firestore SDK
-       ├── Saves generation history
-       └── Loads Creator Profile settings
-````
+This project uses a secure, two-token system to manage user sessions and protect the backend API.
 
-```plaintext
-Backend (Express.js)
-│
-├── Auth Layer
-│   ├── /api/v1/auth/exchange → Firebase → API JWT
-│   └── verifyApiToken → Secures private routes
-│
-├── YouTube Integration
-│   ├── /api/v1/auth/connect/youtube → OAuth flow
-│   └── /api/v1/youtube/analytics → Fetch stats
-│
-├── AI Engine
-│   └── /api/v1/generate → Gemini 2.5 Flash
-│
-└── Database Layer
-    ├── Firestore (Profiles, Tokens)
-    └── Firebase Storage (Logos, Thumbnails)
-```
+1.  **Firebase Login:** The user signs in on the React frontend using Firebase Authentication (Email/Google).
+2.  **Token Exchange:** The frontend receives a temporary Firebase ID Token. It immediately sends this token to the backend's `/api/v1/auth/exchange` endpoint.
+3.  **API JWT Issued:** The Express backend verifies the Firebase token with Firebase Admin, then signs and returns a custom, secure API JWT (1-hour expiry) containing the user's `uid`.
+4.  **Secure API Calls:** The React frontend stores this API JWT in `localStorage` and includes it in the `Authorization: Bearer <token>` header of all subsequent requests to protected API routes.
+5.  **Backend Verification:** The Express `verifyApiToken` middleware intercepts and validates the API JWT on every protected route, ensuring all requests are authenticated.
 
----
+-----
 
-## ✅ Completed Milestones (V1 → V2)
+## 🗺️ Feature Roadmap
 
-### **Step 1: V1 Foundation**
+### ✅ V1: Core Foundation (MVP)
 
-* React + Vite setup
-* Express.js backend with Gemini integration
-* Firebase authentication (Email & Google)
-* Core pages: Generator, History, Settings
-* Basic AI title/description generator
+  * [x] **Core Tech Stack:**
+      * [x] Frontend: React + Vite
+      * [x] Backend: Node.js + Express
+      * [x] AI Engine: Google Gemini 2.5 Flash
+  * [x] **User Authentication:**
+      * [x] Firebase Email/Password & Google Sign-In
+      * [x] Protected routes and auth state management
+  * [x] **Core AI Generator:**
+      * [x] Main generator page
+      * [x] Backend AI prompt (`systemPrompt`) to generate title, description, tags, and thumbnail recipe
+      * [x] Basic game database integration (Steam, Modrinth)
+      * [x] Basic user preferences (language, description length)
+  * [x] **History:**
+      * [x] Save all generations to Firestore per-user
+      * [x] History page to view, reload, and clear past generations
 
----
+-----
 
-### **Step 2: Secure Two-Token Authentication**
+### ✅ V2: Secure Integration & Personalization
 
-* Endpoint: `/api/v1/auth/exchange`
-* Middleware: `verifyApiToken`
-* Backend issues secure JWT for each user
-* Frontend stores API token locally for session persistence
+  * [x] **Secure Backend API:**
+      * [x] "Two-Token" auth system: Firebase ID Token is exchanged for a custom API JWT
+      * [x] All backend API routes are protected by `verifyApiToken` middleware
+  * [x] **YouTube Channel Integration:**
+      * [x] Google OAuth 2.0 flow to connect a user's YouTube channel
+      * [x] Secure, server-side encryption (AES-256) of YouTube refresh tokens
+      * [x] Backend utility to create an authenticated YouTube client for any user
+  * [x] **Creator Profiles (V1):**
+      * [x] Settings page for users to define their brand: `tone`, `voiceGuidelines`, `bannedWords`, `defaultCTAs`, `logoUrl`
+      * [x] Backend API to save/load this profile from Firestore
+      * [x] AI prompt now dynamically includes the `creatorProfile` for personalized, on-brand results
 
----
+-----
 
-### **Step 3: Creator Profiles**
+### 🟡 V3: The Dashboard (VidIq Competitor)
 
-* Users save brand tone, CTAs, banned words, etc.
-* `SettingsPage.jsx` → Firestore write via `/api/v1/profile`
-* AI prompts now include these attributes automatically
+  * [ ] **New Dashboard UI:**
+      * [x] New persistent sidebar layout to house all tools
+      * [x] New `HomePage.jsx` with "Quick Actions"
+  * [ ] **Live YouTube Analytics:**
+      * [x] `HomePage.jsx` widget showing live 30-day Views & Net Subscribers
+      * [x] Backend endpoint for total 30-day analytics (`/api/v1/youtube/analytics`)
+  * [ ] **Optimize Suite:**
+      * [x] `OptimizePage.jsx` to fetch and display a user's recent videos
+      * [x] `OptimizeModal.jsx` for AI-powered suggestions (new title, description, tags) on existing videos
+      * [x] New AI backend endpoint (`/api/v1/ai/optimize`) and prompt (`optimizePrompt`) for this feature
+  * [ ] **Discover Suite:**
+      * [x] Main `DiscoverPage.jsx` tabbed interface
+      * [x] `OutliersTab.jsx`: AI ideas for non-obvious videos
+      * [x] `KeywordsTab.jsx`: AI analysis for topic SEO, search intent, and related keywords
+      * [x] `CompetitorsTab.jsx`: AI analysis of competitors to find "content gaps"
+      * [x] `SubscribersTab.jsx`: Recharts graph of 30-day net subscriber growth (from `/api/v1/youtube/analytics/growth`)
+  * [ ] **Multi-Platform & Profile Management:**
+      * [x] Upgraded `SettingsPage.jsx` to support *multiple* Creator Profiles (Create, Read, Update, Delete)
+      * [x] `GeneratorPage.jsx` UI includes dropdown for **YouTube, Twitch, and Kick** (This is the strategic differentiator)
+      * [ ] **AI Coach (V1 - Chatbot):** Implement the conversational AI coach route
+      * [ ] **Monetization:** Integrate Stripe and tier-based feature access.
 
----
+-----
 
-### **Step 4: YouTube OAuth 2.0 Integration**
+### 🚀 V4: Strategic Differentiation (Multi-Platform & Predictive AI)
 
-* Frontend uses Google GSI client for OAuth
-* Backend endpoint: `/api/v1/auth/connect/youtube`
-* Tokens encrypted with AES-256 before storage
-* `.env` variable for `YOUTUBE_REDIRECT_URI` prevents mismatch
+  * [ ] **4.1. Universal Data Integration:**
+      * [ ] **Integrate Universal Game Database (IGDB/RAWG):** Replace the PC-only game logic with a master API to find *any* game (console, mobile, upcoming).
+      * [ ] **Full Twitch/Kick Integration:** Build backend support for Twitch/Kick connections, analytics, and VOD processing.
+  * [ ] **4.2. Predictive & Niche-Finding Tools (Leveraging 4.1):**
+      * [ ] **Predictive "Hype Cycle" Tracker:** New dashboard module to analyze pre-release hype for upcoming games.
+      * [ ] **Cross-Platform Trend Analysis:** A tool to find YouTube content gaps by analyzing what's popular on Twitch/Kick.
+      * [ ] **"Indie & Nichefinder" AI:** An AI tool that uses the new game database to suggest low-competition "hidden gems" that match a user's Creator Profile.
+      * [ ] **AI-Powered Content Calendar:** A tool that uses game/DLC release dates from the universal database to generate a long-term, strategic content schedule.
+  * [ ] **4.3. Proactive & Generative AI:**
+      * [ ] **"Auto-Profile" Creator:** An AI feature that scans a user's existing channel (titles, descriptions, transcripts) to automatically fill out their Creator Profile fields on the `SettingsPage.jsx`.
+      * [ ] **Proactive "AI Coach" (V2):** Evolve the AI Coach from a chatbot to a *proactive alert system* on the `HomePage.jsx` that delivers analytics-driven and competitor-driven opportunities.
+      * [ ] **True Generative AI Thumbnails:** Integrate an image generation model (Gemini 2.5) to produce ready-to-use thumbnails, automatically compositing the AI-generated title and the user's logo.
+      * [ ] **"Twitch/Kick Smart Clipper":** A VOD-to-Shorts pipeline that auto-finds highlights in long streams and generates a unique, optimized title/description for each clip.
+  * [ ] **4.4. AI Training "Growth Loop" (Gemini 2.5):**
+      * [ ] **Implement Creator-Specific Fine-Tuning Loop:** Create an automated system to train a custom AI model for *each user* based on their channel's *actual* performance data.
+      * [ ] **Step 1. Data Collection:** Periodically fetch all video performance metrics (CTR, Retention, Sub Gain) for a user's channel.
+      * [ ] **Step 2. "Golden Dataset" Creation:** Automatically categorize videos into "Winners" (high-performing) and "Losers" (low-performing).
+      * [ ] **Step 3. AI Training (Two Options):**
+          * [ ] **Option A (Fine-Tuning):** Use the Gemini 2.5 fine-tuning API to create a custom, personalized model (e.g., `gemini-2.5-flash-user-[UID]`) for each user.
+          * [ ] **Option B (Dynamic Prompting):** Dynamically inject the user's top "Winner" and "Loser" examples into the `systemPrompt` at request time.
+  * [ ] **4.5. Platform Expansion:**
+      * [ ] **Chrome Extension (V1):** Begin development of the Chrome Extension for in-platform optimization.
 
----
+-----
 
-### **Step 5: Live YouTube Analytics**
+## 🛠️ Getting Started
 
-* Helper: `getAuthenticatedYouTubeClient(uid)`
-* Endpoint: `/api/v1/youtube/analytics`
-* Retrieves last 30 days of views, subs, engagement
-* Displayed in SettingsPage (proof of live data fetch)
+### Prerequisites
 
----
+  * Node.js (v18 or higher)
+  * A Google Firebase project (for Auth, Firestore, and Storage)
+  * Google Cloud project with:
+      * Gemini API enabled
+      * YouTube Data API v3 enabled
+      * YouTube Analytics API v2 enabled
 
-### **Step 6: Dashboard Planning**
+### 1\. Backend Setup
 
-* Planned new structure:
+1.  Navigate to the backend directory:
+    ```sh
+    cd backend
+    ```
+2.  Install dependencies:
+    ```sh
+    npm install
+    ```
+3.  Create a `.env` file in the `backend/` directory and add your secret keys.
+    ```env
+    # Firebase
+    # (Your Firebase Admin SDK JSON key contents)
 
-  * `/home`
-  * `/optimize`
-  * `/discover`
-  * `/create`
-  * `/ai-coach`
-* Sidebar-based layout replacing top navbar
+    # AI
+    GEMINI_API_KEY=your_gemini_api_key
 
----
+    # API Security
+    JWT_SECRET=your_super_strong_jwt_secret_key
+    TOKEN_ENCRYPTION_KEY=your_32_character_aes_encryption_key
 
-## 🚀 Upcoming Roadmap (V3)
+    # Google OAuth
+    YOUTUBE_CLIENT_ID=your_google_cloud_client_id
+    YOUTUBE_CLIENT_SECRET=your_google_cloud_client_secret
+    YOUTUBE_REDIRECT_URI=http://localhost:80/settings # Must match Google Cloud Console
+    ```
+4.  Run the backend server:
+    ```sh
+    node index.js
+    ```
+    The server will run on `http://localhost:3001`.
 
-### 🎨 **Phase 1: Dashboard Layout**
+### 2\. Frontend Setup
 
-* Persistent sidebar navigation (`SidebarLayout.jsx`)
-* User menu with profile & logout
-* Routing setup for new sections
-  🕓 *ETA: 1.5 weeks*
+1.  Navigate to the frontend directory:
+    ```sh
+    cd frontend
+    ```
+2.  Install dependencies:
+    ```sh
+    npm install
+    ```
+3.  Open `frontend/src/firebase.js` and replace the `firebaseConfig` object with your own project's configuration.
+4.  Create a `.env` file in the `frontend/` directory:
+    ```env
+    # Google OAuth Client ID for the *frontend*
+    VITE_YOUTUBE_CLIENT_ID=your_google_cloud_client_id
+    ```
+5.  Run the frontend dev server:
+    ```sh
+    npm run dev
+    ```
+    The server will run on `http://localhost:80`.
 
----
+**Note:** The frontend is configured with a Vite proxy that automatically forwards all requests from `/api` to the backend at `http://localhost:3001`.
 
-### 📊 **Phase 2: Home Dashboard**
-
-* Quick Actions (Generate, Ideas, Analyze)
-* Live YouTube stats (via `/api/v1/youtube/analytics`)
-* Daily AI ideas (Gemini)
-* Creator XP progression (Firestore)
-  🕓 *ETA: 2 weeks*
-
----
-
-### ⚙️ **Phase 3: Optimize Page**
-
-* Fetch videos (YouTube Data API)
-* Display thumbnails, stats
-* “Optimize with AI” button (via `/api/v1/ai/optimize`)
-* AI scoring system (CTR + SEO + Retention)
-  🕓 *ETA: 3 weeks*
-
----
-
-### 🔍 **Phase 4: Discover Suite**
-
-* Tabs:
-
-  * **Outliers** — Trending similar videos
-  * **Keywords** — Google Trends + Gemini analysis
-  * **Competitors** — Compare YouTube channels
-  * **Subscribers** — Growth graphs (Recharts)
-* Cached results in Firestore
-  🕓 *ETA: 4 weeks*
-
----
-
-### ✨ **Phase 5: Create Suite**
-
-* Submodules:
-
-  * **Thumbnails:** AI Image Gen (Replicate/Gemini Vision)
-  * **Clipping:** Analyze captions for highlight moments
-  * **Script Writer:** Scene-based scripts
-  * **Generate:** Titles, Descriptions, Tags
-    🕓 *ETA: 5 weeks*
-
----
-
-### 🧠 **Phase 6: AI Coach**
-
-* Conversational chatbot with memory
-* Personalized responses based on:
-
-  * Creator profile
-  * Channel analytics
-  * Recent AI generations
-* Endpoint: `/api/v1/ai/coach`
-  🕓 *ETA: 4 weeks*
-
----
-
-### 💵 **Phase 7: Monetization**
-
-* Stripe integration
-* Tier-based access control via Firestore
-* Free tier = 5 AI generations/day
-  🕓 *ETA: 2 weeks*
-
----
-
-### 🧪 **Phase 8: QA & Launch**
-
-* Testing with Jest + Postman collections
-* Sentry for error tracking
-* Firebase Hosting deployment
-  🕓 *ETA: 2 weeks*
-
----
+-----
 
 ## 📡 API Endpoints Overview
 
-| Endpoint                       | Method  | Description                     |
-| ------------------------------ | ------- | ------------------------------- |
-| `/api/v1/auth/exchange`        | POST    | Exchange Firebase token for JWT |
-| `/api/v1/profile`              | GET/PUT | Manage user AI profile          |
-| `/api/v1/generate`             | POST    | Generate AI content             |
-| `/api/v1/auth/connect/youtube` | GET     | Start OAuth 2.0 flow            |
-| `/api/v1/youtube/analytics`    | GET     | Fetch channel metrics           |
-| `/api/v1/ai/optimize`          | POST    | Analyze and rate videos         |
-| `/api/v1/ai/script`            | POST    | Generate scripts                |
-| `/api/v1/ai/thumbnails`        | POST    | AI-based image generation       |
-| `/api/v1/ai/coach`             | POST    | Conversational AI mentor        |
+All routes are prefixed with `/api/v1` and (except for `/auth`) require a valid API JWT.
 
----
+| Method | Endpoint | Description | File |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/auth/exchange` | Exchange a Firebase ID Token for a custom API JWT. | `auth.js` |
+| **POST** | `/auth/connect/youtube` | Connect a user's YouTube account via OAuth code. | `auth.js` |
+| **GET** | `/youtube/connections` | Get the connection status for YouTube, Twitch, etc. | `youtube.js` |
+| **GET** | `/youtube/analytics` | Fetch 30-day total analytics for the connected channel. | `youtube.js` |
+| **GET** | `/youtube/analytics/growth` | Fetch 30-day *daily* subscriber growth for charts. | `youtube.js` |
+| **GET** | `/youtube/videos` | Get a list of the user's most recent 25 videos. | `youtube.js` |
+| **GET** | `/profile` | Get all Creator Profiles for the user. | `profile.js` |
+| **POST** | `/profile` | Create a new, blank Creator Profile. | `profile.js` |
+| **PUT** | `/profile/:id` | Update a specific Creator Profile. | `profile.js` |
+| **DELETE** | `/profile/:id` | Delete a specific Creator Profile. | `profile.js` |
+| **POST** | `/generate` | **Core AI:** Generate content for a new game. | `generate.js` |
+| **POST** | `/ai/optimize` | **Optimize AI:** Get suggestions for an existing video. | `ai.js` |
+| **POST** | `/ai/discover/outliers` | **Discover AI:** Get "outlier" video ideas for a topic. | `ai.js` |
+| **POST** | `/ai/discover/keywords` | **Discover AI:** Get SEO keywords and intent for a topic. | `ai.js` |
+| **POST** | `/ai/discover/competitor` | **Discover AI:** Find content gaps for a competitor. | `ai.js` |
+| **POST** | `/ai/coach` | *(Planned)* Conversational AI mentor. | `ai.js` |
 
-## 🗃️ Firestore Data Structure
+-----
 
-```plaintext
-creatorProfiles
-├── uid
-│   ├── tone: "Energetic"
-│   ├── bannedWords: ["clickbait", "subscribe"]
-│   ├── defaultCTAs: "Join our journey!"
-│   ├── logoUrl: "https://storage.googleapis.com/logo.png"
-│   └── voiceGuidelines: "Friendly and humorous"
-
-connections
-├── uid
-│   ├── provider: "youtube"
-│   ├── encrypted_refresh_token
-│   └── encrypted_access_token
-
-history
-├── uid
-│   ├── type: "title" | "description" | "script"
-│   ├── inputPrompt: "Minecraft survival stream..."
-│   ├── outputText: "Conquer the Deep — Hardcore Survival Begins!"
-│   ├── createdAt: "2025-11-09T14:00Z"
-```
-
----
-
-## 🧠 Gemini Prompt Schema
+## 🗄️ Firestore Data Structure
 
 ```plaintext
-SYSTEM PROMPT:
-You are StreamTitle.AI — a creative YouTube assistant that follows the creator's personal tone and avoids banned words.
+creatorProfiles/
+  └── {uid}/
+      └── profiles/
+          └── {profileId}
+              ├── name: "Main Channel"
+              ├── tone: "Funny, chaotic"
+              ├── voiceGuidelines: "Always use 🚀 emojis"
+              ├── bannedWords: ["boring"]
+              ├── defaultCTAs: ["https://discord.gg/server"]
+              └── logoUrl: "https://i.imgur.com/logo.png"
 
-CONTEXT:
-{userProfile.tone}, {userProfile.voiceGuidelines}, {userProfile.bannedWords}
+connections/
+  └── {uid}/
+      └── youtube/
+          └── tokens
+              ├── channelId: "UC..."
+              ├── channelName: "Creator Name"
+              ├── refreshToken: "AES-256 Encrypted Token"
+              └── ...
 
-TASK:
-Generate 5 SEO-optimized YouTube titles and one engaging video description.
+history/
+  └── {docId}
+      ├── uid: "user-firebase-uid"
+      ├── game: "Elden Ring"
+      ├── platformTitle: "🔥 I Finally Beat Malenia..."
+      ├── platformDescription: "..."
+      ├── platformTags: ["elden ring", "malenia", ...]
+      └── createdAt: "2025-11-12T14:00Z"
 ```
 
----
+-----
 
-## ☁️ Deployment Setup
+## 🤝 Contribution Guidelines
 
-| Environment           | Platform                          | Description                  |
-| --------------------- | --------------------------------- | ---------------------------- |
-| **Staging**           | Firebase Hosting + Functions      | Testing & pre-release builds |
-| **Production**        | Firebase / Vercel                 | Live deployment              |
-| **Monitoring**        | Sentry + Google Analytics         | Performance & error tracking |
-| **Environment Files** | `.env.staging`, `.env.production` | Separate API keys            |
-
----
-
-## 🧭 Development Timeline
-
-| Phase | Module         | Duration  | Status |
-| :---- | :------------- | :-------- | :----- |
-| 1     | Sidebar Layout | 1.5 weeks | ⏳      |
-| 2     | Home Dashboard | 2 weeks   | ⏳      |
-| 3     | Optimize Page  | 3 weeks   | 🔜     |
-| 4     | Discover Suite | 4 weeks   | 🔜     |
-| 5     | Create Suite   | 5 weeks   | 🔜     |
-| 6     | AI Coach       | 4 weeks   | 🔜     |
-| 7     | Monetization   | 2 weeks   | 🔜     |
-| 8     | QA & Launch    | 2 weeks   | 🔜     |
-
-*Total Estimated Duration: 6–7 Months*
-
----
-
-## 🧾 Contribution Guidelines
-
-1. **Branch Naming:**
-   `feature/<module_name>` or `fix/<bug_name>`
-2. **Commit Format:**
-   `feat(dashboard): added stats widget`
-   `fix(auth): token refresh issue`
-3. **Code Reviews:**
-   PRs must be reviewed by one lead dev before merging.
-4. **Environment:**
-   Copy `.env.example` → `.env.local` for frontend, `.env` for backend.
-5. **Testing:**
-   Run unit tests via Jest before PR submission.
-
----
-
-## 🔮 Future Expansion
-
-* **Chrome Extension:** In-browser title generator overlay
-* **OBS Plugin:** Real-time title/tag suggestions during live streams
-* **Discord Bot:** Auto-generate titles + announcements
-* **Mobile Companion App:** React Native version of dashboard
-
----
-
-## 📘 Summary
-
-**StreamTitle.AI** has matured from a simple AI-powered title generator into a robust, secure, and data-driven creator platform.
-The upcoming **V3 dashboard** will unify all tools — AI generation, analytics, optimization, and monetization — into a single intelligent ecosystem for creators.
-
----
-
-### 🧩 Maintainer Notes
-
-> “Code scalability, prompt structure, and data security are the foundation pillars of StreamTitle.AI. Every commit should keep these three in balance.”
-> — *Abyss Mage, Lead Developer*
-
----
-
-**© 2025 SafeHouse Studios — Internal Developer Documentation**
+1.  **Branch Naming:**
+    `feature/<module_name>` or `fix/<bug_name>`
+2.  **Commit Format:**
+    `feat(dashboard): added stats widget`
+    `fix(auth): token refresh issue`
+3.  **Code Reviews:**
+    PRs must be reviewed by one lead dev before merging.
+4.  **Environment:**
+    Copy `.env.example` → `.env.local` for frontend, `.env` for backend.
+5.  **Testing:**
+    Run unit tests via Jest (when added) before PR submission.
