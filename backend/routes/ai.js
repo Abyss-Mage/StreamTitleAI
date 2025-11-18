@@ -4,214 +4,124 @@ const { db } = require('../config/firebase');
 const { 
   mainModel, 
   optimizePrompt, 
-  outliersPrompt,
-  keywordsPrompt,
-  competitorPrompt // <-- IMPORT NEW PROMPT
+  outliersPrompt, 
+  keywordsPrompt, 
+  competitorPrompt, 
+  coachPrompt 
 } = require('../config/ai');
 const aiRouter = express.Router();
 
-// --- V2: Optimize Endpoint ---
+// Helper to get profile
+async function getProfile(uid, profileId) {
+  if (!profileId) return {};
+  const doc = await db.collection('creatorProfiles').doc(uid).collection('profiles').doc(profileId).get();
+  return doc.exists ? doc.data() : {};
+}
+
+// Optimize
 aiRouter.post('/optimize', async (req, res) => {
   try {
-    const { videoDetails } = req.body;
-    const uid = req.user.uid;
+    const { videoDetails, profileId, model } = req.body;
+    const creatorProfile = await getProfile(req.user.uid, profileId);
 
-    // 1. Fetch Creator Profile
-    let creatorProfile = {};
-    // Use the multi-profile system: check for a profileId in the request
-    if (req.body.profileId) {
-      const profileRef = db.collection('creatorProfiles').doc(uid).collection('profiles').doc(req.body.profileId);
-      const doc = await profileRef.get();
-      if (doc.exists) {
-        creatorProfile = doc.data();
-      }
-    } else {
-      // Fallback or default logic if no profileId is passed (e.g., use first, or default)
-      // For now, we just use an empty profile if no ID is sent.
-      console.log("[StreamTitle.AI] Optimize: No profileId sent, using default empty profile.");
-    }
-
-    // 2. Start Chat with Gemini
     const chat = mainModel.startChat({
       history: [{ role: "user", parts: [{ text: optimizePrompt }] }],
-      generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+      generationConfig: { maxOutputTokens: 8192 },
+      model: model
     });
 
-    // 3. Send Payload
-    const aiRequestPayload = {
-      videoDetails: videoDetails,
-      creatorProfile: creatorProfile,
-    };
-    const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
-    const response = await result.response;
-    const rawText = response.text();
-
-    // 4. Parse and Send Response
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (!match) {
-      throw new Error("No valid JSON object found in Gemini response.");
-    }
-    const jsonResponse = JSON.parse(match[0]);
-    res.json(jsonResponse);
-
+    const result = await chat.sendMessage(JSON.stringify({ videoDetails, creatorProfile }));
+    const match = result.response.text().match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(match[0]));
   } catch (error) {
-    console.error('[StreamTitle.AI] Error optimizing video:', error.message);
-    res.status(500).json({ error: 'Failed to optimize video.' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// --- V3: Discover/Outliers Endpoint ---
+// Discover: Outliers
 aiRouter.post('/discover/outliers', async (req, res) => {
   try {
-    const { topic } = req.body;
-    const uid = req.user.uid;
+    const { topic, profileId, model } = req.body;
+    const creatorProfile = await getProfile(req.user.uid, profileId);
 
-    if (!topic) {
-      return res.status(400).json({ error: 'Topic is required.' });
-    }
-
-    // 1. Fetch Creator Profile (Using multi-profile system)
-    let creatorProfile = {};
-    if (req.body.profileId) { // Check for profileId
-      const profileRef = db.collection('creatorProfiles').doc(uid).collection('profiles').doc(req.body.profileId);
-      const doc = await profileRef.get();
-      if (doc.exists) {
-        creatorProfile = doc.data();
-      }
-    } else {
-      console.log("[StreamTitle.AI] Outliers: No profileId sent, using default empty profile.");
-    }
-
-    // 2. Start Chat with Gemini
     const chat = mainModel.startChat({
       history: [{ role: "user", parts: [{ text: outliersPrompt }] }],
-      generationConfig: { maxOutputTokens: 8192, temperature: 0.8 },
+      model: model
     });
 
-    // 3. Send Payload
-    const aiRequestPayload = {
-      topic: topic,
-      creatorProfile: creatorProfile,
-    };
-    const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
-    const response = await result.response;
-    const rawText = response.text();
-
-    // 4. Parse and Send Response
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (!match) {
-      throw new Error("No valid JSON object found in Gemini response.");
-    }
-    const jsonResponse = JSON.parse(match[0]);
-    res.json(jsonResponse);
-
+    const result = await chat.sendMessage(JSON.stringify({ topic, creatorProfile }));
+    const match = result.response.text().match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(match[0]));
   } catch (error) {
-    console.error('[StreamTitle.AI] Error generating outlier ideas:', error.message);
-    res.status(500).json({ error: 'Failed to generate ideas.' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// --- V3: Discover/Keywords Endpoint ---
+// Discover: Keywords
 aiRouter.post('/discover/keywords', async (req, res) => {
   try {
-    const { topic } = req.body;
-    const uid = req.user.uid;
+    const { topic, profileId, model } = req.body;
+    const creatorProfile = await getProfile(req.user.uid, profileId);
 
-    if (!topic) {
-      return res.status(400).json({ error: 'Topic is required.' });
-    }
-
-    // 1. Fetch Creator Profile (Using multi-profile system)
-    let creatorProfile = {};
-    if (req.body.profileId) { // Check for profileId
-      const profileRef = db.collection('creatorProfiles').doc(uid).collection('profiles').doc(req.body.profileId);
-      const doc = await profileRef.get();
-      if (doc.exists) {
-        creatorProfile = doc.data();
-      }
-    } else {
-      console.log("[StreamTitle.AI] Keywords: No profileId sent, using default empty profile.");
-    }
-
-    // 2. Start Chat with Gemini
     const chat = mainModel.startChat({
       history: [{ role: "user", parts: [{ text: keywordsPrompt }] }],
-      generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+      model: model
     });
 
-    // 3. Send Payload
-    const aiRequestPayload = {
-      topic: topic,
-      creatorProfile: creatorProfile,
-    };
-    const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
-    const response = await result.response;
-    const rawText = response.text();
-
-    // 4. Parse and Send Response
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (!match) {
-      throw new Error("No valid JSON object found in Gemini response.");
-    }
-    const jsonResponse = JSON.parse(match[0]);
-    res.json(jsonResponse);
-
+    const result = await chat.sendMessage(JSON.stringify({ topic, creatorProfile }));
+    const match = result.response.text().match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(match[0]));
   } catch (error) {
-    console.error('[StreamTitle.AI] Error generating keyword ideas:', error.message);
-    res.status(500).json({ error: 'Failed to generate ideas.' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// --- NEW: V3 Discover/Competitor Endpoint ---
+// Discover: Competitor
 aiRouter.post('/discover/competitor', async (req, res) => {
   try {
-    const { topic } = req.body; // Renamed to "topic" for consistency
-    const uid = req.user.uid;
+    const { topic, profileId, model } = req.body;
+    const creatorProfile = await getProfile(req.user.uid, profileId);
 
-    if (!topic) {
-      return res.status(400).json({ error: 'Competitor topic is required.' });
-    }
-
-    // 1. Fetch Creator Profile (Using multi-profile system)
-    let creatorProfile = {};
-    if (req.body.profileId) { // Check for profileId
-      const profileRef = db.collection('creatorProfiles').doc(uid).collection('profiles').doc(req.body.profileId);
-      const doc = await profileRef.get();
-      if (doc.exists) {
-        creatorProfile = doc.data();
-      }
-    } else {
-      console.log("[StreamTitle.AI] Competitor: No profileId sent, using default empty profile.");
-    }
-
-    // 2. Start Chat with Gemini
     const chat = mainModel.startChat({
       history: [{ role: "user", parts: [{ text: competitorPrompt }] }],
-      generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+      model: model
     });
 
-    // 3. Send Payload
-    const aiRequestPayload = {
-      competitorTopic: topic,
-      creatorProfile: creatorProfile,
-    };
-    const result = await chat.sendMessage(JSON.stringify(aiRequestPayload));
-    const response = await result.response;
-    const rawText = response.text();
-
-    // 4. Parse and Send Response
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (!match) {
-      throw new Error("No valid JSON object found in Gemini response.");
-    }
-    const jsonResponse = JSON.parse(match[0]);
-    res.json(jsonResponse);
-
+    const result = await chat.sendMessage(JSON.stringify({ competitorTopic: topic, creatorProfile }));
+    const match = result.response.text().match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(match[0]));
   } catch (error) {
-    console.error('[StreamTitle.AI] Error generating competitor analysis:', error.message);
-    res.status(500).json({ error: 'Failed to generate analysis.' });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Coach
+aiRouter.post('/coach', async (req, res) => {
+  try {
+    const { messages, profileId, model } = req.body;
+    const creatorProfile = await getProfile(req.user.uid, profileId);
+
+    // Map history for adapter
+    const formattedHistory = messages.map(msg => ({
+      role: msg.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: msg.text }]
+    }));
+
+    const chat = mainModel.startChat({
+      history: [
+        { role: "user", parts: [{ text: `System: ${coachPrompt}\nProfile: ${JSON.stringify(creatorProfile)}` }] },
+        { role: "model", parts: [{ text: "Ready." }] },
+        ...formattedHistory.slice(0, -1)
+      ],
+      model: model
+    });
+
+    const lastMsg = messages[messages.length - 1].text;
+    const result = await chat.sendMessage(lastMsg);
+    res.json({ reply: result.response.text() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = aiRouter;

@@ -13,7 +13,8 @@ import {
   Coffee,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  MessageSquare // <-- Ensure this is imported
 } from 'react-feather';
 
 // Re-using the NavLink logic from App.jsx
@@ -52,6 +53,10 @@ function SidebarLayout({ theme, toggleTheme }) {
           <NavLink to="/discover" className={getNavLinkClass}>
             <Coffee size={18} />
             <span>Discover</span>
+          </NavLink>
+          <NavLink to="/coach" className={getNavLinkClass}>
+            <MessageSquare size={18} />
+            <span>AI Coach</span>
           </NavLink>
         </nav>
 

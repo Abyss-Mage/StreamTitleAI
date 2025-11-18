@@ -13,6 +13,7 @@ import GeneratorPage from './GeneratorPage.jsx';
 import HistoryPage from './HistoryPage.jsx';
 import LoginPage from './LoginPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
+import CoachPage from './pages/CoachPage.jsx';
 
 // V3 Layout & Page Imports
 import SidebarLayout from './layouts/SidebarLayout.jsx';
@@ -127,7 +128,7 @@ function App() {
             {/* V3 Pages */}
             <Route path="optimize" element={<OptimizePage />} />
             <Route path="discover" element={<DiscoverPage />} />
-            <Route path="coach" element={<div className="results-card" style={{marginTop: 0}}><h2>AI Coach (Coming Soon)</h2></div>} />
+            <Route path="coach" element={<CoachPage />} />
           </Route>
           
           {/* Fallback route */}
