@@ -42,6 +42,31 @@ router.post('/create-checkout-session', verifyApiToken, async (req, res) => {
   }
 });
 
+// POST /api/v1/stripe/bypass
+router.post('/bypass', verifyApiToken, async (req, res) => {
+  const { code } = req.body;
+  const uid = req.user.uid;
+
+  // Hardcoded secret code for testers
+  if (code !== 'BETA_TESTER_2025') {
+    return res.status(403).json({ error: 'Invalid code' });
+  }
+
+  try {
+    // Manually unlock Pro status in Firebase
+    await db.collection('users').doc(uid).set({
+      isPro: true,
+      subscriptionStatus: 'active', // active (bypass)
+      plan: 'beta_tester',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    res.json({ success: true, message: 'Beta access granted!' });
+  } catch (error) {
+    res.status(500).json({ error: 'Database update failed' });
+  }
+});
+
 // 2. Stripe Webhook (MUST be raw body, handled in index.js usually, but routing here for logic)
 // This endpoint is called by Stripe servers, not your frontend.
 // Note: You need to configure index.js to NOT parse JSON for this specific route if using express.json() globally.

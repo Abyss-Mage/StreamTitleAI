@@ -4,7 +4,9 @@ const axios = require('axios');
 const { db } = require('../config/firebase');
 const { decrypt } = require('../utils/crypto');
 const { TWITCH_CLIENT_ID } = require('../utils/twitch'); 
+const { verifyApiToken } = require('../middleware/auth'); // <-- 1. Import Middleware
 
+// Helper to get stored token
 async function getTwitchToken(uid) {
   const doc = await db.collection('connections').doc(uid).collection('twitch').doc('tokens').get();
   if (!doc.exists) throw new Error('Twitch not connected');
@@ -22,8 +24,11 @@ async function getTwitchToken(uid) {
   }
 }
 
-router.get('/analytics', async (req, res) => {
+// GET /api/v1/twitch/analytics
+// 2. Add 'verifyApiToken' before the async handler
+router.get('/analytics', verifyApiToken, async (req, res) => {
   try {
+    // Now req.user is populated!
     const { accessToken, channelId } = await getTwitchToken(req.user.uid);
     
     // Ensure Client ID is loaded
@@ -34,7 +39,7 @@ router.get('/analytics', async (req, res) => {
 
     const headers = { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` };
 
-    // 1. Get User Info (Most reliable first step)
+    // 1. Get User Info
     const userRes = await axios.get(`https://api.twitch.tv/helix/users`, {
       headers,
       params: { id: channelId }
@@ -46,7 +51,6 @@ router.get('/analytics', async (req, res) => {
     const userData = userRes.data.data[0];
 
     // 2. Get Channel Followers
-    // Note: 'broadcaster_id' must match the token owner
     const channelRes = await axios.get(`https://api.twitch.tv/helix/channels/followers`, {
       headers,
       params: { broadcaster_id: channelId, first: 1 }
@@ -75,7 +79,6 @@ router.get('/analytics', async (req, res) => {
     });
 
   } catch (error) {
-    // Detailed Logging
     const status = error.response?.status || 500;
     const msg = error.response?.data?.message || error.message;
     console.error(`[Twitch API Error ${status}]: ${msg}`);

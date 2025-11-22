@@ -10,17 +10,19 @@
   --primary-glow: hsl(var(--primary-hue), 90%, 60%, 0.4);
   --primary-gradient: linear-gradient(90deg, hsl(var(--primary-hue), 90%, 60%), hsl(280, 90%, 60%));
   
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
+  --text-primary: #111827; /* Dark gray */
+  --text-secondary: #4B5563; /* Medium gray */
   --text-on-primary: #ffffff;
-  
-  /* Surfaces */
+  --text-placeholder: #6B7280;
+
+  /* Surfaces (for Glassmorphism) */
   --surface-color: rgba(255, 255, 255, 0.4);
   --surface-border: rgba(0, 0, 0, 0.08);
   
   /* Backgrounds */
   --bg-color: #F3F4F6;
   --bg-input: rgba(255, 255, 255, 0.7);
+  --bg-tag: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="dark"] {
@@ -33,6 +35,7 @@
   --text-primary: #f0f0f0;
   --text-secondary: #a0a0b0;
   --text-on-primary: #ffffff;
+  --text-placeholder: #888;
 
   /* Surfaces */
   --surface-color: rgba(255, 255, 255, 0.05);
@@ -41,13 +44,59 @@
   /* Backgrounds */
   --bg-color: #0b021a;
   --bg-input: rgba(0, 0, 0, 0.2);
+  --bg-tag: var(--surface-color);
 }
 
+/* --- Global Base Styles --- */
 @layer base {
   body {
-    @apply bg-[var(--bg-color)] text-[var(--text-primary)] transition-colors duration-300 min-h-screen;
+    @apply bg-[var(--bg-color)] text-[var(--text-primary)] transition-colors duration-300 min-h-screen selection:bg-violet-500 selection:text-white;
+    
+    /* Custom Mesh Gradient Background */
     background-image: 
       radial-gradient(at 20% 20%, hsla(var(--primary-hue), 100%, 70%, 0.15) 0px, transparent 50%),
       radial-gradient(at 80% 80%, hsla(280, 100%, 70%, 0.15) 0px, transparent 50%);
+      
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Fix for Select Dropdown Colors */
+  select option {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+  }
+
+  /* Explicit overrides for dark mode to prevent OS default white menus */
+  [data-theme='dark'] select option {
+    background-color: #1f2937; /* Slate-800 */
+    color: #f3f4f6; /* Slate-100 */
+  }
+}
+
+/* --- Custom Scrollbar --- */
+@layer utilities {
+  /* Webkit Scrollbar Customization */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface-border);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+  }
+  
+  /* Utility to hide scrollbar but keep functionality */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

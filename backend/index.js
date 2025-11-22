@@ -6,7 +6,8 @@ require('dotenv').config();
 const apiRoutes = require('./routes');
 const stripeWebhookRoute = require('./routes/stripe-webhook'); 
 const stripeRoutes = require('./routes/stripe'); 
-const twitchRoutes = require('./routes/twitch'); // <-- 1. Import Twitch
+const twitchRoutes = require('./routes/twitch');
+const feedbackRoutes = require('./routes/feedback'); // <-- 1. Import Twitch
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -25,9 +26,12 @@ app.use(express.json());
 app.use('/api/v1/stripe', stripeRoutes);
 
 // 5. Mount Twitch Routes (Analytics)
-app.use('/api/v1/twitch', twitchRoutes); // <-- 2. Mount Twitch
+app.use('/api/v1/twitch', twitchRoutes);
 
-// 6. Mount Main API Router (Auth, Profile, Generate, etc.)
+// 6. Mount Feedback Routes
+app.use('/api/v1/feedback', feedbackRoutes);// <-- 2. Mount Twitch
+
+// 7. Mount Main API Router (Auth, Profile, Generate, etc.)
 // This handles everything else under /api/v1
 app.use('/api/v1', apiRoutes);
 

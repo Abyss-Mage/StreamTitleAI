@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import { Check, Zap, Shield, Star } from 'react-feather';
+import { Check, Zap, Star, Key, AlertCircle } from 'react-feather';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function PricingPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [bypassCode, setBypassCode] = useState('');
 
-  // Replace this with your actual Stripe Price ID from your Stripe Dashboard
-  // e.g., price_1Qxxxxxxxxxxxxxx
-  const STRIPE_PRICE_ID = "price_1SWGLiSgkZbSk9McUwYFjO5y"; 
+  // Replace with your actual Stripe Price ID
+  const STRIPE_PRICE_ID = "price_1Qxxxxxxxxxxxxxxx"; 
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -30,8 +30,26 @@ export default function PricingPage() {
     }
   };
 
+  const handleBypass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bypassCode) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('apiToken');
+      await axios.post('/api/v1/stripe/bypass', 
+        { code: bypassCode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Beta Tester Access Granted! Refreshing...");
+      window.location.reload();
+    } catch (err) {
+      alert("Invalid Code.");
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="max-w-5xl mx-auto py-12 animate-in fade-in duration-500">
+    <div className="max-w-5xl mx-auto py-12 animate-in fade-in duration-500 pb-20">
       <div className="text-center mb-16">
         <h1 className="text-4xl font-extrabold text-slate-100 mb-4">Upgrade Your Content Game</h1>
         <p className="text-xl text-slate-400">Unlock the full power of AI optimization and coaching.</p>
@@ -86,6 +104,31 @@ export default function PricingPage() {
           </button>
         </div>
 
+      </div>
+
+      {/* Tester Bypass Section */}
+      <div className="max-w-md mx-auto mt-16 pt-8 border-t border-white/5 text-center">
+        <p className="text-slate-500 text-sm mb-4 flex items-center justify-center gap-2">
+          <Key size={14} /> Have a Beta Tester code?
+        </p>
+        <form onSubmit={handleBypass} className="flex gap-2">
+          <div className="relative flex-1">
+            <input 
+              type="text" 
+              value={bypassCode}
+              onChange={(e) => setBypassCode(e.target.value)}
+              placeholder="Enter Code" 
+              className="w-full bg-[var(--bg-input)] border border-border rounded-lg py-2 px-3 text-sm text-slate-200 outline-none focus:border-primary transition-all placeholder:text-slate-600"
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={loading || !bypassCode}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+          >
+            Redeem
+          </button>
+        </form>
       </div>
     </div>
   );
