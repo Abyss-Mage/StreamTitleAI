@@ -111,5 +111,4 @@ __pycache__/
 Thumbs.db
 
 # --- Others ---
-firebase.js
 serviceAccountKey.json
