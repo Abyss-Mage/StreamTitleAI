@@ -1,10 +1,8 @@
-// frontend/src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// TODO: Replace with your app's Firebase project configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBUJAwKqzF3rVKQX7ya5ptqAKlF3Qcs5V8",
   authDomain: "streamtitleai.firebaseapp.com",

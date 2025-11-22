@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- CSS Variables (Theme Tokens) --- */
+:root {
+  /* Light Theme */
+  --primary-hue: 250; /* Violet */
+  --primary-color: hsl(var(--primary-hue), 90%, 60%);
+  --primary-glow: hsl(var(--primary-hue), 90%, 60%, 0.4);
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary-hue), 90%, 60%), hsl(280, 90%, 60%));
+  
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-on-primary: #ffffff;
+  
+  /* Surfaces */
+  --surface-color: rgba(255, 255, 255, 0.4);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  
+  /* Backgrounds */
+  --bg-color: #F3F4F6;
+  --bg-input: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] {
+  /* Dark Theme */
+  --primary-hue: 250;
+  --primary-color: hsl(var(--primary-hue), 100%, 70%);
+  --primary-glow: hsl(var(--primary-hue), 100%, 70%, 0.3);
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary-hue), 100%, 70%), hsl(280, 100%, 70%));
+  
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0b0;
+  --text-on-primary: #ffffff;
+
+  /* Surfaces */
+  --surface-color: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(255, 255, 255, 0.1);
+  
+  /* Backgrounds */
+  --bg-color: #0b021a;
+  --bg-input: rgba(0, 0, 0, 0.2);
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg-color)] text-[var(--text-primary)] transition-colors duration-300 min-h-screen;
+    background-image: 
+      radial-gradient(at 20% 20%, hsla(var(--primary-hue), 100%, 70%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 80% 80%, hsla(280, 100%, 70%, 0.15) 0px, transparent 50%);
+  }
+}

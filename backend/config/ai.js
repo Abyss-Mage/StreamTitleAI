@@ -156,6 +156,19 @@ Convert the input (acronym/slang) to the FULL, OFFICIAL game name.
 Output ONLY the name.
 `;
 
+const dailyIdeaPrompt = `
+You are a gaming trend analyst. Identify ONE rising trend, mechanic, or challenge in the gaming world right now (e.g., a specific challenge run in Elden Ring, a mod in Minecraft, a viral strategy in a competitive shooter).
+
+Return ONLY a valid JSON object.
+OUTPUT:
+{
+  "game": "Game Name",
+  "title": "Viral Video Title Idea",
+  "idea": "A 2-sentence explanation of why this is trending and what the video should be.",
+  "difficulty": "Hard/Medium/Easy"
+}
+`;
+
 module.exports = {
   mainModel,
   expanderModel,
@@ -166,5 +179,6 @@ module.exports = {
   outliersPrompt,
   keywordsPrompt,
   competitorPrompt,
-  coachPrompt
+  coachPrompt,
+  dailyIdeaPrompt
 };
