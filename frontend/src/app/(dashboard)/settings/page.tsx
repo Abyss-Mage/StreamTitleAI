@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Script from 'next/script'; // <-- New Import
+import Script from 'next/script';
+import { useRouter, useSearchParams } from 'next/navigation'; // <-- New Import
 import { 
   User, Loader, AlertCircle, Save, 
   Edit3, Volume2, Slash, Link, CheckCircle,
@@ -29,6 +30,8 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [connections, setConnections] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   
   // Google OAuth State
   const [googleClient, setGoogleClient] = useState<any>(null);
@@ -103,6 +106,53 @@ export default function SettingsPage() {
     } else {
       alert("Google Client not ready. Try refreshing.");
     }
+  };
+
+  // --- NEW: Handle Twitch Callback ---
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const state = searchParams.get('state'); // Optional security check
+
+    if (code && state === 'twitch_connect') {
+      const connectTwitch = async () => {
+        // Clear URL to prevent loop
+        window.history.replaceState(null, '', '/settings');
+        setMessage(null);
+        
+        try {
+          const token = localStorage.getItem('apiToken');
+          const response = await axios.post('/api/v1/auth/connect/twitch', 
+            { code },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          setConnections((prev: any) => ({
+            ...prev,
+            twitch: { connected: true, channelName: response.data.channelName }
+          }));
+          setMessage({ type: 'success', text: "Twitch connected successfully!" });
+        } catch (err) {
+          setMessage({ type: 'error', text: "Twitch connection failed." });
+        }
+      };
+      connectTwitch();
+    }
+  }, [searchParams]);
+
+  // --- NEW: Trigger Twitch Redirect ---
+  const handleTwitchRedirect = () => {
+    const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
+    const redirectUri = encodeURIComponent('http://localhost/settings'); // Must match Dashboard
+    const scope = encodeURIComponent('user:read:email channel:read:subscriptions'); // Adjust scopes as needed
+    const state = 'twitch_connect'; // Simple state check
+
+    if (!clientId) {
+      alert("Twitch Client ID is missing in .env.local");
+      return;
+    }
+
+    const url = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}`;
+    window.location.href = url;
   };
 
   // --- CRUD Handlers (Same as before) ---
@@ -202,15 +252,33 @@ export default function SettingsPage() {
             )}
           </div>
           
-          {/* Twitch Status (Placeholder) */}
-          <div className="flex items-center justify-between bg-[var(--bg-input)] p-4 rounded-xl border border-border opacity-60">
+{/* Twitch Status (Active) */}
+          <div className="flex items-center justify-between bg-[var(--bg-input)] p-4 rounded-xl border border-border">
              <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500"><Twitch size={20} /></div>
               <div>
                 <strong className="block text-slate-200">Twitch</strong>
-                <span className="text-xs text-slate-500">Coming Soon</span>
+                {connections?.twitch?.connected ? (
+                  <span className="text-xs text-green-400 flex items-center gap-1">
+                    <Check size={12} /> Connected as {connections.twitch.channelName}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <X size={12} /> Disconnected
+                  </span>
+                )}
               </div>
             </div>
+            
+            {/* Connect Button */}
+            {!connections?.twitch?.connected && (
+              <button 
+                onClick={handleTwitchRedirect} 
+                className="px-4 py-2 bg-primary hover:bg-violet-500 text-white text-sm font-bold rounded-lg transition-colors"
+              >
+                Connect
+              </button>
+            )}
           </div>
         </div>
       </div>

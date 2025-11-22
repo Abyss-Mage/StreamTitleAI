@@ -11,6 +11,7 @@ const {
   YOUTUBE_REDIRECT_URI 
 } = require('../utils/youtube');
 const { encrypt } = require('../utils/crypto');
+const { getTwitchTokens, getTwitchUser } = require('../utils/twitch');
 
 // --- V2: Auth Exchange Endpoint ---
 // POST /api/v1/auth/exchange
@@ -85,6 +86,44 @@ router.post('/connect/youtube', verifyApiToken, async (req, res) => {
   } catch (error) {
     console.error("[StreamTitle.AI] Error connecting YouTube:", error.message);
     res.status(500).send('Failed to connect YouTube account.');
+  }
+});
+
+// POST /api/v1/auth/connect/twitch
+router.post('/connect/twitch', verifyApiToken, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const uid = req.user.uid;
+
+    if (!code) return res.status(400).send('No code provided.');
+
+    // 1. Exchange Code for Tokens
+    const tokens = await getTwitchTokens(code);
+    const { access_token, refresh_token, scope } = tokens;
+
+    // 2. Get Channel Info
+    const userProfile = await getTwitchUser(access_token);
+    const channelId = userProfile.id;
+    const channelName = userProfile.display_name;
+
+    // 3. Encrypt and Save to Firestore
+    // Note: We save this in a sibling collection to YouTube
+    const connectionRef = db.collection('connections').doc(uid).collection('twitch').doc('tokens');
+
+    await connectionRef.set({
+      channelId: channelId,
+      channelName: channelName,
+      accessToken: encrypt(access_token),
+      refreshToken: encrypt(refresh_token),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`[StreamTitle.AI] Connected Twitch for user ${uid}`);
+    res.json({ success: true, channelName });
+
+  } catch (error) {
+    console.error("Twitch Connect Error:", error);
+    res.status(500).send('Failed to connect Twitch account.');
   }
 });
 
