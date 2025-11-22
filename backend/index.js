@@ -1,21 +1,36 @@
-// backend/index.js
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); // Ensure env vars are loaded first
+require('dotenv').config();
 
-const apiRoutes = require('./routes'); // Imports the main router from routes/index.js
+// Import Routers
+const apiRoutes = require('./routes');
+const stripeWebhookRoute = require('./routes/stripe-webhook'); 
+const stripeRoutes = require('./routes/stripe'); 
+const twitchRoutes = require('./routes/twitch'); // <-- 1. Import Twitch
 
-// --- Configuration ---
 const app = express();
 const port = process.env.PORT || 3001;
-app.use(express.json());
+
+// --- Middleware ---
 app.use(cors());
 
-// --- Mount Main API Router ---
-// All v1 routes will be handled by the apiRoutes module
+// 2. Mount Stripe Webhook FIRST (Needs Raw Body)
+// This must be defined before express.json()
+app.use('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRoute);
+
+// 3. Global JSON Parser (For everything else)
+app.use(express.json());
+
+// 4. Mount Stripe General Routes (Checkout)
+app.use('/api/v1/stripe', stripeRoutes);
+
+// 5. Mount Twitch Routes (Analytics)
+app.use('/api/v1/twitch', twitchRoutes); // <-- 2. Mount Twitch
+
+// 6. Mount Main API Router (Auth, Profile, Generate, etc.)
+// This handles everything else under /api/v1
 app.use('/api/v1', apiRoutes);
 
-// --- Start the Server ---
 app.listen(port, () => {
     console.log(`[StreamTitle.AI] Server running on http://localhost:${port}`);
 });

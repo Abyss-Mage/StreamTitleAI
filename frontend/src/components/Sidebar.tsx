@@ -6,7 +6,7 @@ import { auth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { 
   Grid, Search, Clock, Settings, Zap, Coffee, 
-  MessageSquare, LogOut, Sun, Moon 
+  MessageSquare, LogOut, Sun, Moon, CreditCard 
 } from 'react-feather';
 import { useState, useEffect } from 'react';
 
@@ -15,7 +15,6 @@ export default function Sidebar() {
   const router = useRouter();
   const [theme, setTheme] = useState('dark');
 
-  // Toggle Theme Logic
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
@@ -35,7 +34,6 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  // Helper for active link styling
   const getLinkClass = (path: string) => {
     const isActive = pathname?.startsWith(path);
     return `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 font-medium ${
@@ -79,6 +77,11 @@ export default function Sidebar() {
 
       <div className="mt-auto flex flex-col gap-4 pt-6 border-t border-border">
         <nav className="flex flex-col gap-2">
+          {/* NEW: Pricing Link */}
+          <Link href="/pricing" className={getLinkClass('/pricing')}>
+            <CreditCard size={18} />
+            <span>Pricing</span>
+          </Link>
           <Link href="/history" className={getLinkClass('/history')}>
             <Clock size={18} />
             <span>History</span>

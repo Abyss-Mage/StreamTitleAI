@@ -2,201 +2,150 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { BarChart2, MessageSquare, Zap, Search, Coffee, ArrowUp, ArrowDown, AlertCircle, Loader } from 'react-feather';
+import { BarChart2, ArrowUp, ArrowDown, Youtube, Twitch, Clock, MessageCircle, Heart, Eye, Users, Video } from 'react-feather';
 import { useAuth } from '@/components/AuthProvider';
-import Link from 'next/link';
-
-// --- New Interface ---
-interface DailyIdea {
-  game: string;
-  title: string;
-  idea: string;
-  difficulty: string;
-}
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [dailyIdea, setDailyIdea] = useState<DailyIdea | null>(null); // <--- New State
+  const [activeTab, setActiveTab] = useState<'youtube' | 'twitch'>('youtube');
+  const [ytData, setYtData] = useState<any>(null);
+  const [twData, setTwData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadDashboard = async () => {
+    const loadData = async () => {
+      if (!user) return;
+      const token = localStorage.getItem('apiToken');
+      const headers = { Authorization: `Bearer ${token}` };
+
       try {
-        const token = localStorage.getItem('apiToken');
-        
-        // Parallel Fetching
-        const [analyticsRes, ideaRes] = await Promise.allSettled([
-          axios.get('/api/v1/youtube/analytics', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/v1/ai/daily-idea', { headers: { Authorization: `Bearer ${token}` } })
+        // Use Promise.allSettled to fetch both, even if one fails
+        const results = await Promise.allSettled([
+          axios.get('/api/v1/youtube/analytics', { headers }),
+          axios.get('/api/v1/twitch/analytics', { headers })
         ]);
 
-        // Handle Analytics
-        if (analyticsRes.status === 'fulfilled' && analyticsRes.value.data.analytics?.rows?.length > 0) {
-          const row = analyticsRes.value.data.analytics.rows[0];
-          setAnalytics({
-            channelTitle: analyticsRes.value.data.channelTitle,
-            views: Number(row[0]),
-            subscribersGained: Number(row[1]),
-            subscribersLost: Number(row[2])
-          });
+        const [ytResult, twResult] = results;
+
+        // 1. Handle YouTube
+        if (ytResult.status === 'fulfilled') {
+          setYtData(ytResult.value.data);
+        } else {
+          console.warn("YouTube Analytics Failed:", ytResult.reason);
         }
 
-        // Handle Daily Idea
-        if (ideaRes.status === 'fulfilled') {
-          setDailyIdea(ideaRes.value.data);
+        // 2. Handle Twitch (With Debugging)
+        if (twResult.status === 'fulfilled') {
+          console.log("Twitch Data Received:", twResult.value.data); // <--- Check Console
+          setTwData(twResult.value.data);
+        } else {
+          // This will tell us if it's a 404, 500, or Auth error
+          console.error("Twitch Analytics Failed:", twResult.reason); 
         }
 
       } catch (err) {
-        console.error("Dashboard load error", err);
+        console.error("Global Dashboard Error:", err);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (user) loadDashboard();
+    loadData();
   }, [user]);
 
-  const netSubs = analytics ? analytics.subscribersGained - analytics.subscribersLost : 0;
+  const renderStatCard = (label: string, value: string | number, icon: any, colorClass: string) => (
+    <div className="bg-surface border border-border p-5 rounded-xl flex items-center gap-4 hover:border-primary/30 transition-colors">
+      <div className={`p-3 rounded-lg bg-opacity-10 ${colorClass.replace('text-', 'bg-')}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-slate-100">{value ? value.toLocaleString() : 0}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">
-            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">{user?.displayName || 'Creator'}</span>!
-          </h1>
-          <p className="text-slate-400 mt-1">Here is your V3 dashboard overview.</p>
+          <h1 className="text-3xl font-bold text-slate-100">Performance</h1>
+          <p className="text-slate-400">Detailed analytics across your platforms.</p>
         </div>
-        <div className="flex gap-3">
-           <Link href="/generator" className="bg-primary hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-violet-500/20 transition-all flex items-center gap-2">
-             <Search size={18} /> New Generation
-           </Link>
+        <div className="flex bg-surface border border-border rounded-lg p-1">
+          <button 
+            onClick={() => setActiveTab('youtube')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'youtube' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Youtube size={16} /> YouTube
+          </button>
+          <button 
+            onClick={() => setActiveTab('twitch')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'twitch' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Twitch size={16} /> Twitch
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Card 1: Analytics (Unchanged logic, just kept for context) */}
-        <div className="lg:col-span-2 bg-surface border border-border backdrop-blur-md rounded-2xl p-6 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-violet-500/10 rounded-lg text-violet-400"><BarChart2 size={20} /></div>
-            <h2 className="text-lg font-bold text-slate-100">Channel Analytics (30d)</h2>
-          </div>
-
-          {loading ? (
-            <div className="h-32 flex items-center justify-center">
-              <div className="w-8 h-8 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div>
-            </div>
-          ) : analytics ? (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-black/20 p-5 rounded-xl border border-white/5 text-center">
-                <span className="block text-3xl font-extrabold text-slate-100 mb-1">{analytics.views.toLocaleString()}</span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Views</span>
-              </div>
-              <div className="bg-black/20 p-5 rounded-xl border border-white/5 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <span className={`text-3xl font-extrabold ${netSubs >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {netSubs > 0 ? '+' : ''}{netSubs.toLocaleString()}
-                  </span>
-                  {netSubs >= 0 ? <ArrowUp size={20} className="text-emerald-400" /> : <ArrowDown size={20} className="text-red-400" />}
+      {loading ? (
+        <div className="h-64 flex items-center justify-center text-slate-500">Loading analytics...</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          
+          {/* YOUTUBE TAB */}
+          {activeTab === 'youtube' && (
+            ytData ? (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-4 bg-gradient-to-r from-red-900/20 to-surface border border-red-500/20 p-6 rounded-2xl">
+                  <img src={ytData.thumbnail} className="w-16 h-16 rounded-full border-2 border-red-500" alt="Channel" />
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{ytData.channelTitle}</h2>
+                    <span className="text-red-400 text-sm font-medium">YouTube Connected</span>
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Subs</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {renderStatCard("30d Views", ytData.stats.views, <Eye className="text-blue-400" size={24} />, "text-blue-400")}
+                  {renderStatCard("Net Subs", ytData.stats.netSubs, ytData.stats.netSubs >= 0 ? <ArrowUp className="text-green-400" size={24} /> : <ArrowDown className="text-red-400" size={24} />, ytData.stats.netSubs >= 0 ? "text-green-400" : "text-red-400")}
+                  {renderStatCard("Watch Hours", ytData.stats.watchTimeHours, <Clock className="text-orange-400" size={24} />, "text-orange-400")}
+                  {renderStatCard("Avg Duration", `${ytData.stats.avgViewDuration}s`, <BarChart2 className="text-purple-400" size={24} />, "text-purple-400")}
+                </div>
               </div>
-              <div className="bg-black/20 p-5 rounded-xl border border-white/5 text-center">
-                 <span className="block text-lg font-bold text-slate-100 mb-1 truncate px-2" title={analytics.channelTitle}>
-                    {analytics.channelTitle}
-                 </span>
-                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Channel</span>
+            ) : (
+              <div className="text-center py-20 bg-surface border border-border rounded-2xl text-slate-500">
+                YouTube not connected. Go to Settings.
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-slate-400 mb-4">No channel connected.</p>
-              <Link href="/settings" className="text-primary hover:underline text-sm font-medium">Connect YouTube in Settings →</Link>
-            </div>
+            )
+          )}
+
+          {/* TWITCH TAB */}
+          {activeTab === 'twitch' && (
+            twData ? (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center gap-4 bg-gradient-to-r from-purple-900/20 to-surface border border-purple-500/20 p-6 rounded-2xl">
+                  <img src={twData.thumbnail} className="w-16 h-16 rounded-full border-2 border-purple-500" alt="Channel" />
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{twData.channelTitle}</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-400 text-sm font-medium capitalize">{twData.stats.broadcasterType || 'Streamer'}</span>
+                      {twData.stats.isLive && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded font-bold animate-pulse">LIVE</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {renderStatCard("Followers", twData.stats.followers, <Users className="text-purple-400" size={24} />, "text-purple-400")}
+                  {renderStatCard("Total Views", twData.stats.totalViews, <Video className="text-blue-400" size={24} />, "text-blue-400")}
+                  {renderStatCard("Current Viewers", twData.stats.currentViewers, <Eye className="text-red-400" size={24} />, "text-red-400")}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-surface border border-border rounded-2xl text-slate-500">
+                Twitch not connected. Go to Settings.
+              </div>
+            )
           )}
         </div>
-
-        {/* Card 2: Quick Actions (Unchanged) */}
-        <div className="bg-surface border border-border backdrop-blur-md rounded-2xl p-6 shadow-xl flex flex-col">
-           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-fuchsia-500/10 rounded-lg text-fuchsia-400"><Zap size={20} /></div>
-            <h2 className="text-lg font-bold text-slate-100">Quick Actions</h2>
-          </div>
-          <div className="flex-1 flex flex-col gap-3">
-             <Link href="/optimize" className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-input)] border border-border hover:border-primary hover:shadow-[0_4px_20px_var(--primary-glow)] transition-all group">
-                <div className="p-2 bg-violet-500/20 rounded-lg text-violet-400 group-hover:bg-violet-500 group-hover:text-white transition-colors"><Zap size={18} /></div>
-                <div>
-                  <h4 className="font-bold text-slate-200">Optimize Video</h4>
-                  <p className="text-xs text-slate-400">Analyze existing content</p>
-                </div>
-             </Link>
-             <Link href="/discover" className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-input)] border border-border hover:border-primary hover:shadow-[0_4px_20px_var(--primary-glow)] transition-all group">
-                <div className="p-2 bg-amber-500/20 rounded-lg text-amber-400 group-hover:bg-amber-500 group-hover:text-white transition-colors"><Coffee size={18} /></div>
-                <div>
-                  <h4 className="font-bold text-slate-200">Discover Trends</h4>
-                  <p className="text-xs text-slate-400">Find content gaps</p>
-                </div>
-             </Link>
-          </div>
-        </div>
-
-        {/* Card 3: Daily AI Idea (REAL DATA) */}
-        <div className="lg:col-span-3 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6 relative overflow-hidden group">
-           
-           {/* Background Glow */}
-           <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all" />
-
-           <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400 flex-shrink-0 z-10">
-              <MessageSquare size={32} />
-           </div>
-           
-           <div className="flex-1 z-10">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-bold text-slate-100">Daily AI Inspiration</h3>
-                {dailyIdea && (
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
-                    dailyIdea.difficulty === 'Hard' ? 'bg-red-500/20 text-red-400' : 
-                    dailyIdea.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {dailyIdea.difficulty}
-                  </span>
-                )}
-              </div>
-              
-              {dailyIdea ? (
-                <>
-                  <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
-                    "{dailyIdea.title}"
-                  </p>
-                  <p className="text-slate-400 leading-relaxed max-w-3xl">
-                    <span className="text-slate-200 font-bold">{dailyIdea.game}:</span> {dailyIdea.idea}
-                  </p>
-                </>
-              ) : loading ? (
-                <div className="flex items-center gap-3 text-slate-500">
-                  <Loader size={16} className="animate-spin" />
-                  Scanning gaming trends...
-                </div>
-              ) : (
-                <p className="text-slate-500">Check back tomorrow for a new idea.</p>
-              )}
-           </div>
-
-           {dailyIdea && (
-             <button 
-               onClick={() => navigator.clipboard.writeText(dailyIdea.title)}
-               className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 transition-all z-10 whitespace-nowrap self-center md:self-start"
-             >
-               Copy Idea
-             </button>
-           )}
-        </div>
-
-      </div>
+      )}
     </div>
   );
 }

@@ -42,46 +42,49 @@ router.get('/connections', async (req, res) => {
 router.get('/analytics', async (req, res) => {
   try {
     const uid = req.user.uid;
-
-    // 1. Get the authenticated client
     const oauth2Client = await getAuthenticatedYouTubeClient(uid);
-    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
-
-    // 2. Get Channel Info
-    const channelResponse = await youtube.channels.list({
-      part: 'contentDetails,snippet',
-      mine: true,
-    });
-
-    if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
-      return res.status(404).send('YouTube channel not found.');
-    }
-    
-    const channelData = channelResponse.data.items[0];
-    const channelTitle = channelData.snippet.title;
-    
-    // 3. Call the YouTube Analytics API (Totals for last 30 days)
     const analytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
     
+    // 1. Get Channel Basic Info
+    const youtubeData = google.youtube({ version: 'v3', auth: oauth2Client });
+    const channelRes = await youtubeData.channels.list({ part: 'snippet,statistics', mine: true });
+    if (!channelRes.data.items?.length) return res.status(404).send('Channel not found.');
+    
+    const channel = channelRes.data.items[0];
+
+    // 2. Get Detailed 30-Day Stats
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const analyticsResponse = await analytics.reports.query({
-      ids: 'channel==MINE', // Use "MINE" for the authenticated user
-      startDate: startDate,
-      endDate: endDate,
-      metrics: 'views,subscribersGained,subscribersLost',
+    const report = await analytics.reports.query({
+      ids: 'channel==MINE',
+      startDate,
+      endDate,
+      // Added: estimatedMinutesWatched, averageViewDuration, likes, comments
+      metrics: 'views,subscribersGained,subscribersLost,estimatedMinutesWatched,averageViewDuration,likes,comments',
     });
 
+    const rows = report.data.rows?.[0] || [0,0,0,0,0,0,0];
+
     res.json({
-      success: true,
-      channelTitle: channelTitle,
-      analytics: analyticsResponse.data,
+      platform: 'youtube',
+      channelTitle: channel.snippet.title,
+      thumbnail: channel.snippet.thumbnails.default.url,
+      stats: {
+        views: rows[0],
+        subsGained: rows[1],
+        subsLost: rows[2],
+        netSubs: rows[1] - rows[2],
+        watchTimeHours: Math.round(rows[3] / 60), // Convert min to hours
+        avgViewDuration: Math.round(rows[4]), // Seconds
+        likes: rows[5],
+        comments: rows[6]
+      }
     });
 
   } catch (error) {
-    console.error("[StreamTitle.AI] Error fetching YouTube analytics:", error.message);
-    res.status(500).send('Failed to fetch YouTube analytics.');
+    console.error("YouTube Analytics Error:", error.message);
+    res.status(500).send('Failed to fetch YouTube stats.');
   }
 });
 
